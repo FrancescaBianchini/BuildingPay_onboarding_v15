@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo noupdate="1">
+    <!--
+        Regole di accesso ai record BuildingPay.
+        Caricato DOPO security/ir.model.access.csv per garantire che
+        i gruppi siano già stati creati e che i model_id siano disponibili.
+    -->
+
+    <!-- buildingpay_v36.config: solo manager può scrivere -->
+    <record id="rule_buildingpay_config_manager" model="ir.rule">
+        <field name="name">BuildingPay Config: Manager può modificare</field>
+        <field name="model_id" ref="BuildingPay_onboarding_v15.model_buildingpay_v36_config"/>
+        <field name="groups" eval="[(4, ref('BuildingPay_onboarding_v15.group_buildingpay_manager'))]"/>
+        <field name="perm_read" eval="True"/>
+        <field name="perm_write" eval="True"/>
+        <field name="perm_create" eval="True"/>
+        <field name="perm_unlink" eval="False"/>
+        <field name="domain_force">[(1, '=', 1)]</field>
+    </record>
+</odoo>

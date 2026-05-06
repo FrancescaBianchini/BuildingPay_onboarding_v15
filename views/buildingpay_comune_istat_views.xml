@@ -1,0 +1,204 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <!-- ================================================
+         LIST VIEW: buildingpay.comune.istat
+    ================================================= -->
+    <record id="view_buildingpay_comune_istat_list" model="ir.ui.view">
+        <field name="name">buildingpay.comune.istat.list</field>
+        <field name="model">buildingpay.comune.istat</field>
+        <field name="arch" type="xml">
+            <tree string="Codici ISTAT comuni">
+                <field name="cod_regione"/>
+                <field name="denominazione_regione"/>
+                <field name="cod_comune_numerico"/>
+                <field name="cod_comune_alfanumerico"/>
+                <field name="denominazione_it"/>
+                <field name="denominazione_de" optional="hide"/>
+                <field name="denominazione_altra_lingua" optional="hide"/>
+                <field name="cod_catastale"/>
+                <field name="sigla_auto"/>
+                <field name="state_id"/>
+            </tree>
+        </field>
+    </record>
+
+    <!-- ================================================
+         FORM VIEW: buildingpay.comune.istat
+    ================================================= -->
+    <record id="view_buildingpay_comune_istat_form" model="ir.ui.view">
+        <field name="name">buildingpay.comune.istat.form</field>
+        <field name="model">buildingpay.comune.istat</field>
+        <field name="arch" type="xml">
+            <form string="Codice ISTAT comune">
+                <sheet>
+                    <div class="oe_title">
+                        <h1>
+                            <field name="denominazione_it"/>
+                        </h1>
+                    </div>
+                    <group>
+                        <group string="Identificativi">
+                            <field name="cod_comune_numerico"/>
+                            <field name="cod_comune_alfanumerico"/>
+                            <field name="cod_catastale"/>
+                            <field name="sigla_auto"/>
+                            <field name="state_id"/>
+                        </group>
+                        <group string="Denominazioni">
+                            <field name="denominazione_de"/>
+                            <field name="denominazione_altra_lingua"/>
+                        </group>
+                    </group>
+                    <group>
+                        <group string="Territorio">
+                            <field name="cod_ripartizione"/>
+                            <field name="denominazione_ripartizione"/>
+                            <field name="cod_regione"/>
+                            <field name="denominazione_regione"/>
+                            <field name="cod_citta_metropolitana"/>
+                            <field name="denominazione_citta_metropolitana"/>
+                            <field name="cod_provincia_storico"/>
+                            <field name="progressivo_comune"/>
+                        </group>
+                        <group string="Dati statistici">
+                            <field name="popolazione_2011"/>
+                            <field name="flag_capoluogo"/>
+                            <field name="cod_comune_110"/>
+                            <field name="cod_comune_107"/>
+                            <field name="cod_comune_103"/>
+                        </group>
+                    </group>
+                    <group string="Codici NUTS">
+                        <group>
+                            <field name="cod_nuts1"/>
+                            <field name="cod_nuts2"/>
+                            <field name="cod_nuts3"/>
+                        </group>
+                    </group>
+                </sheet>
+            </form>
+        </field>
+    </record>
+
+    <!-- ================================================
+         SEARCH VIEW: buildingpay.comune.istat
+    ================================================= -->
+    <record id="view_buildingpay_comune_istat_search" model="ir.ui.view">
+        <field name="name">buildingpay.comune.istat.search</field>
+        <field name="model">buildingpay.comune.istat</field>
+        <field name="arch" type="xml">
+            <search string="Cerca comune ISTAT">
+                <field name="denominazione_it" string="Denominazione"/>
+                <field name="cod_comune_numerico" string="Codice numerico"/>
+                <field name="cod_comune_alfanumerico" string="Codice alfanumerico"/>
+                <field name="cod_catastale" string="Codice catastale"/>
+                <field name="cod_regione" string="Codice regione"/>
+                <field name="sigla_auto" string="Sigla"/>
+                <separator/>
+                <filter string="Senza collegamento a res.country.state"
+                        name="senza_city"
+                        domain="[('state_id', '=', False)]"/>
+                <group expand="0" string="Raggruppa per">
+                    <filter string="Regione" name="gr_regione"
+                            context="{'group_by': 'denominazione_regione'}"/>
+                    <filter string="Sigla" name="gr_sigla"
+                            context="{'group_by': 'sigla_auto'}"/>
+                </group>
+            </search>
+        </field>
+    </record>
+
+    <!-- ================================================
+         ACTION: buildingpay.comune.istat
+    ================================================= -->
+    <record id="action_buildingpay_comune_istat" model="ir.actions.act_window">
+        <field name="name">Codici ISTAT comuni</field>
+        <field name="res_model">buildingpay.comune.istat</field>
+        <field name="view_mode">list,form</field>
+        <field name="help" type="html">
+            <p class="o_view_nocontent_smiling_face">
+                Nessun dato ISTAT presente
+            </p>
+            <p>
+                Utilizzare il menu <strong>Importa CSV ISTAT</strong> per caricare
+                il file dei comuni scaricato dal sito ISTAT.
+            </p>
+        </field>
+    </record>
+
+    <!-- ================================================
+         FORM VIEW: wizard importazione ISTAT
+    ================================================= -->
+    <record id="view_wizard_import_istat_form" model="ir.ui.view">
+        <field name="name">buildingpay.wizard.import.istat.form</field>
+        <field name="model">buildingpay.wizard.import.istat</field>
+        <field name="arch" type="xml">
+            <form string="Importa CSV ISTAT">
+                <sheet>
+                    <!-- campo state dichiarato nella vista perché usato nei modifier invisible -->
+                    <field name="state" invisible="1"/>
+
+                    <!-- ── Stato: in attesa ── -->
+                    <group invisible="state != 'draft'">
+                        <p class="text-muted">
+                            Carica il file CSV scaricato da ISTAT:
+                            <a href="https://www.istat.it/storage/codici-unita-amministrative/Elenco-comuni-italiani.csv"
+                               target="_blank">
+                                Elenco-comuni-italiani.csv
+                            </a>
+                        </p>
+                        <group string="File CSV">
+                            <field name="csv_file" widget="binary"
+                                   filename="csv_filename"/>
+                            <field name="csv_filename"/>
+                        </group>
+                        <group string="Opzioni">
+                            <field name="cancella_esistenti"/>
+                        </group>
+                    </group>
+
+                    <!-- ── Stato: completato ── -->
+                    <group invisible="state != 'done'">
+                        <div class="alert alert-success" role="alert">
+                            <field name="result_message" nolabel="1"/>
+                        </div>
+                        <group string="Dettaglio">
+                            <field name="righe_importate"/>
+                            <field name="righe_errore"/>
+                            <field name="state_aggiornate"/>
+                        </group>
+                    </group>
+                </sheet>
+
+                <footer>
+                    <!-- Bottoni mostrati quando state = draft -->
+                    <button name="action_import"
+                            type="object"
+                            string="Importa CSV e abbina comuni"
+                            class="btn btn-primary"
+                            invisible="state != 'draft'"/>
+                    <button name="action_abbina_solo"
+                            type="object"
+                            string="Solo abbinamento (senza reimportare)"
+                            class="btn btn-secondary"
+                            invisible="state != 'draft'"/>
+                    <button string="Chiudi"
+                            class="btn btn-secondary"
+                            special="cancel"/>
+                </footer>
+            </form>
+        </field>
+    </record>
+
+    <!-- ================================================
+         ACTION: wizard importazione ISTAT
+    ================================================= -->
+    <record id="action_wizard_import_istat" model="ir.actions.act_window">
+        <field name="name">Importa CSV ISTAT</field>
+        <field name="res_model">buildingpay.wizard.import.istat</field>
+        <field name="view_mode">form</field>
+        <field name="target">new</field>
+    </record>
+
+</odoo>

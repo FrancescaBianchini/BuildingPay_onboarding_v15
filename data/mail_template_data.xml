@@ -1,0 +1,205 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo noupdate="0">
+    <!-- ================================================
+         EMAIL TEMPLATE: Mail benvenuto amministratore
+         Inviata al nuovo utente portale dopo la registrazione.
+         Modificabile da interfaccia Odoo (noupdate="1").
+
+         IMPORTANTE: body_html in Odoo 17 usa il motore QWeb.
+         Sintassi corretta: t-esc, t-if, t-att-href
+         NON usare Jinja2 ({{ }}, {% %}) nel body_html.
+         I campi subject/email_to/email_from/lang rimangono Jinja2.
+    ================================================= -->
+    <record id="email_template_benvenuto_amministratore" model="mail.template">
+        <field name="name">Mail benvenuto amministratore</field>
+        <field name="model_id" ref="base.model_res_partner"/>
+        <field name="subject">Benvenuto in BuildingPay - Riepilogo registrazione</field>
+        <field name="email_to">{{ object.email }}</field>
+        <field name="email_from">{{ 'BuildingPay &lt;%s&gt;' % (user.company_id.email or user.email or '') }}</field>
+        <field name="lang">{{ object.lang }}</field>
+        <field name="body_html" type="html">
+<div style="margin: 0px; padding: 0px; font-size: 13px;">
+    <p style="margin: 0px; padding: 0px; font-size: 13px;">
+        Gentile <strong><t t-esc="object.name"/></strong>,
+    </p>
+    <br/>
+    <p>
+        Benvenuto in <strong>BuildingPay</strong>! La tua registrazione è stata completata con successo.
+    </p>
+    <p>
+        Di seguito trovi il riepilogo delle informazioni inserite nel sistema:
+    </p>
+    <table style="width: 100%; border-collapse: collapse; margin: 16px 0;">
+        <tr style="background-color: #f5f5f5;">
+            <td style="padding: 8px; border: 1px solid #ddd; font-weight: bold; width: 35%;">Nome e Cognome</td>
+            <td style="padding: 8px; border: 1px solid #ddd;"><t t-esc="object.name"/></td>
+        </tr>
+        <tr>
+            <td style="padding: 8px; border: 1px solid #ddd; font-weight: bold;">Email</td>
+            <td style="padding: 8px; border: 1px solid #ddd;"><t t-esc="object.email or '-'"/></td>
+        </tr>
+        <tr style="background-color: #f5f5f5;">
+            <td style="padding: 8px; border: 1px solid #ddd; font-weight: bold;">PEC</td>
+            <td style="padding: 8px; border: 1px solid #ddd;"><t t-esc="object.pec_mail or '-'"/></td>
+        </tr>
+        <tr>
+            <td style="padding: 8px; border: 1px solid #ddd; font-weight: bold;">Telefono</td>
+            <td style="padding: 8px; border: 1px solid #ddd;"><t t-esc="object.phone or '-'"/></td>
+        </tr>
+        <tr style="background-color: #f5f5f5;">
+            <td style="padding: 8px; border: 1px solid #ddd; font-weight: bold;">Indirizzo</td>
+            <td style="padding: 8px; border: 1px solid #ddd;">
+                <t t-esc="object.street or ''"/>
+                <t t-if="object.city"> - <t t-esc="object.city"/></t>
+                <t t-if="object.zip"> <t t-esc="object.zip"/></t>
+                <t t-if="object.state_id"> (<t t-esc="object.state_id.name"/>)</t>
+            </td>
+        </tr>
+        <tr>
+            <td style="padding: 8px; border: 1px solid #ddd; font-weight: bold;">Codice Fiscale / P.IVA</td>
+            <td style="padding: 8px; border: 1px solid #ddd;">
+                <t t-esc="object.fiscalcode or ''"/>
+                <t t-if="object.vat"> / <t t-esc="object.vat"/></t>
+            </td>
+        </tr>
+        <tr style="background-color: #f5f5f5;">
+            <td style="padding: 8px; border: 1px solid #ddd; font-weight: bold;">IBAN</td>
+            <td style="padding: 8px; border: 1px solid #ddd;">
+                <t t-set="bank_line" t-value="object.bank_ids[:1]"/>
+                <t t-esc="bank_line.acc_number if bank_line else '-'"/>
+            </td>
+        </tr>
+        <tr>
+            <td style="padding: 8px; border: 1px solid #ddd; font-weight: bold;">Applicativo</td>
+            <td style="padding: 8px; border: 1px solid #ddd;"><t t-esc="object.applicativo or '-'"/></td>
+        </tr>
+        <tr style="background-color: #f5f5f5;">
+            <td style="padding: 8px; border: 1px solid #ddd; font-weight: bold;">Sistema di pagamento</td>
+            <td style="padding: 8px; border: 1px solid #ddd;"><t t-esc="object.sistema_pagamento or '-'"/></td>
+        </tr>
+        <t t-if="object.referrer_id">
+        <tr>
+            <td style="padding: 8px; border: 1px solid #ddd; font-weight: bold;">Invitato da</td>
+            <td style="padding: 8px; border: 1px solid #ddd;"><t t-esc="object.referrer_id.name"/></td>
+        </tr>
+        </t>
+    </table>
+    <p>
+        Per completare la procedura di adesione, ti chiediamo (laddove disponibile e richiesto)
+        di scaricare, compilare e firmare il documento <strong>"Accordo amministratore"</strong>
+        disponibile nell'area riservata, sezione "Contratti".
+    </p>
+    <t t-if="object.company_id.buildingpay_firma_link">
+    <p>
+        Puoi procedere con la firma elettronica tramite Aruba al seguente link:<br/>
+        <a t-att-href="object.company_id.buildingpay_firma_link" style="color: #007bff;">
+            <t t-esc="object.company_id.buildingpay_firma_link"/>
+        </a>
+    </p>
+    </t>
+    <p>
+        Per accedere alla tua area riservata, utilizza le credenziali che ti sono state inviate
+        separatamente da Odoo.
+    </p>
+    <br/>
+    <p>Cordiali saluti,<br/><strong>Il team BuildingPay</strong></p>
+</div>
+        </field>
+        <field name="auto_delete" eval="False"/>
+    </record>
+
+    <!-- ================================================
+         TEMPLATE: Amministratore abilitato a BuildingPay
+         Inviato automaticamente quando is_amministratore_validato
+         viene impostato a TRUE nel form contatti.
+    ================================================= -->
+    <record id="email_template_admin_validato" model="mail.template">
+        <field name="name">Amministratore abilitato a BuildingPay</field>
+        <field name="model_id" ref="base.model_res_partner"/>
+        <field name="subject">Amministratore abilitato a BuildingPay</field>
+        <field name="email_to">{{ object.email }}</field>
+        <field name="email_from">{{ 'BuildingPay &lt;%s&gt;' % (user.company_id.email or user.email or '') }}</field>
+        <field name="lang">{{ object.lang }}</field>
+        <field name="body_html" type="html">
+<div style="margin: 0px; padding: 0px; font-size: 13px;">
+    <p>Gentile amministratore <strong><t t-esc="object.name"/></strong>,</p>
+    <br/>
+    <p>i tuoi dati sono stati validati.</p>
+    <p>Da adesso puoi accedere al sito
+        <a href="https://amministratori.buildingpay.it/web/login" style="color: #007bff;">
+            https://amministratori.buildingpay.it/web/login
+        </a>
+        e inserire i tuoi condomini.
+    </p>
+    <br/>
+    <p>Cordiali saluti,<br/><strong>Il team BuildingPay</strong></p>
+</div>
+        </field>
+        <field name="auto_delete" eval="False"/>
+    </record>
+
+    <!-- ================================================
+         TEMPLATE: Invio contratto firmato da Pes
+         Inviato all'amministratore quando il backoffice carica
+         il contratto amministratore firmato da Pes.
+         Corpo modificabile dall'interfaccia Odoo.
+    ================================================= -->
+    <record id="email_template_contratto_pes" model="mail.template">
+        <field name="name">Invio contratto firmato</field>
+        <field name="model_id" ref="base.model_res_partner"/>
+        <field name="subject">Invio contratto firmato</field>
+        <field name="email_to">{{ object.email }}</field>
+        <field name="email_from">{{ 'BuildingPay &lt;%s&gt;' % (user.company_id.email or user.email or '') }}</field>
+        <field name="lang">{{ object.lang }}</field>
+        <field name="body_html" type="html">
+<div style="margin: 0px; padding: 0px; font-size: 13px;">
+    <p style="margin: 0px; padding: 0px; font-size: 13px;">
+        Gentile <strong><t t-esc="object.name"/></strong>,
+    </p>
+    <br/>
+    <p>
+        In allegato trovi il contratto amministratore firmato da Progetto e Soluzioni.
+    </p>
+    <p>
+        Ti invitiamo a conservare questo documento per i tuoi archivi.
+    </p>
+    <br/>
+    <p>Cordiali saluti,<br/><strong>Il team BuildingPay</strong></p>
+</div>
+        </field>
+        <field name="auto_delete" eval="False"/>
+    </record>
+
+    <!-- ================================================
+         TEMPLATE: Invio accordo condomini firmato da Pes
+         Inviato all'amministratore quando il backoffice carica
+         l'accordo condomini aggregati firmato da Pes.
+         Corpo modificabile dall'interfaccia Odoo.
+    ================================================= -->
+    <record id="email_template_accordo_condomini_pes" model="mail.template">
+        <field name="name">Invio accordo condomini firmato</field>
+        <field name="model_id" ref="base.model_res_partner"/>
+        <field name="subject">Invio accordo condomini firmato</field>
+        <field name="email_to">{{ object.email }}</field>
+        <field name="email_from">{{ 'BuildingPay &lt;%s&gt;' % (user.company_id.email or user.email or '') }}</field>
+        <field name="lang">{{ object.lang }}</field>
+        <field name="body_html" type="html">
+<div style="margin: 0px; padding: 0px; font-size: 13px;">
+    <p style="margin: 0px; padding: 0px; font-size: 13px;">
+        Gentile <strong><t t-esc="object.name"/></strong>,
+    </p>
+    <br/>
+    <p>
+        In allegato trovi l'Accordo Condomini Aggregati firmato da Progetto e Soluzioni.
+    </p>
+    <p>
+        Ti invitiamo a conservare questo documento per i tuoi archivi.
+    </p>
+    <br/>
+    <p>Cordiali saluti,<br/><strong>Il team BuildingPay</strong></p>
+</div>
+        </field>
+        <field name="auto_delete" eval="False"/>
+    </record>
+
+</odoo>

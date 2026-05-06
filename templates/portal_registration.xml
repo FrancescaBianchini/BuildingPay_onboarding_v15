@@ -1,0 +1,501 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <!-- ================================================
+         FORM DI REGISTRAZIONE BUILDINGPAY
+         Template STANDALONE — NON eredita auth_signup.signup.
+         Usa portal.portal_layout + col-md-8 come /my/profilo.
+         Il controller BuildingPaySignup.web_auth_signup() lo renderizza
+         direttamente via request.render() per i GET su /web/signup.
+    ================================================= -->
+    <template id="signup_form"
+              name="BuildingPay - Form di Registrazione">
+        <t t-call="portal.portal_layout">
+            <t t-set="breadcrumbs_searchbar" t-value="False"/>
+
+            <div class="container mt-4">
+                <div class="row justify-content-center">
+                    <div class="col-md-8">
+
+                        <!-- Caso 1: nessun codice referrer nell'URL -->
+                        <t t-if="not referrer_code">
+                            <div class="card border-danger">
+                                <div class="card-header bg-danger text-white">
+                                    <i class="fa fa-ban me-2"/>
+                                    <strong>Registrazione non autorizzata</strong>
+                                </div>
+                                <div class="card-body text-center py-5">
+                                    <i class="fa fa-lock fa-4x text-danger mb-3 d-block"/>
+                                    <h5>Non sei autorizzato a registrarti senza un codice referrer.</h5>
+                                    <p class="text-muted mt-3">
+                                        Per iscriverti a BuildingPay devi ricevere un link di invito
+                                        dal tuo referrer di riferimento.<br/>
+                                        Contattalo per ottenere il link personalizzato.
+                                    </p>
+                                    <a href="/web/login" class="btn btn-outline-secondary mt-2">
+                                        <i class="fa fa-arrow-left me-2"/>
+                                        Torna al login
+                                    </a>
+                                </div>
+                            </div>
+                        </t>
+
+                        <!-- Caso 2: codice referrer presente ma non valido (lunghezza errata o non trovato) -->
+                        <t t-if="referrer_code and referrer_code_invalid">
+                            <div class="card border-warning">
+                                <div class="card-header bg-warning">
+                                    <i class="fa fa-exclamation-triangle me-2"/>
+                                    <strong>Codice referrer non valido</strong>
+                                </div>
+                                <div class="card-body text-center py-5">
+                                    <i class="fa fa-question-circle fa-4x text-warning mb-3 d-block"/>
+                                    <t t-if="referrer_code_wrong_length">
+                                        <h5>Il link di invito non è corretto.</h5>
+                                        <p class="text-muted mt-3">
+                                            Il codice referrer nel link non ha il formato previsto
+                                            (deve essere di esattamente 8 caratteri, es.
+                                            <code>AB12CD34</code>).<br/>
+                                            Chiedi al tuo referrer di inviarti il link corretto.
+                                        </p>
+                                    </t>
+                                    <t t-else="">
+                                        <h5>Il codice referrer nel link non è valido o non è più attivo.</h5>
+                                        <p class="text-muted mt-3">
+                                            Verifica di aver usato il link di invito corretto.<br/>
+                                            Se il problema persiste, contatta il tuo referrer per ricevere un nuovo link.
+                                        </p>
+                                    </t>
+                                    <a href="/web/login" class="btn btn-outline-secondary mt-2">
+                                        <i class="fa fa-arrow-left me-2"/>
+                                        Torna al login
+                                    </a>
+                                </div>
+                            </div>
+                        </t>
+
+                        <!-- Caso 3: codice referrer valido → mostra il form -->
+                        <t t-if="referrer_code and not referrer_code_invalid">
+
+                        <!-- Messaggio referrer invitante -->
+                        <t t-if="referrer_partner">
+                            <div class="alert alert-info mb-4" role="alert">
+                                <i class="fa fa-user-plus me-2"/>
+                                Sei stato invitato da <strong><t t-esc="referrer_partner.name"/></strong>
+                                ad iscriverti a BuildingPay.
+                            </div>
+                        </t>
+
+                        <!-- Errori generali -->
+                        <t t-if="error and error.get('general')">
+                            <div class="alert alert-danger mb-4">
+                                <t t-esc="error.get('general')"/>
+                            </div>
+                        </t>
+
+                        <!-- Card principale — identica a /my/profilo -->
+                        <div class="card">
+                            <div class="card-header">
+                                <i class="fa fa-user-plus me-2"/>
+                                <strong>Registrazione amministratore</strong>
+                            </div>
+                            <div class="card-body">
+                                <form action="/web/signup"
+                                      method="post"
+                                      enctype="multipart/form-data">
+                                    <input type="hidden" name="csrf_token"
+                                           t-att-value="request.csrf_token()"/>
+                                    <input type="hidden" name="redirect"
+                                           t-att-value="redirect or ''"/>
+                                    <t t-if="referrer_code">
+                                        <input type="hidden" name="referrer_code"
+                                               t-att-value="referrer_code"/>
+                                    </t>
+
+                                    <!-- ====================================
+                                         DATI PERSONALI
+                                    ===================================== -->
+                                    <h6 class="text-muted mb-3">Dati personali</h6>
+
+                                    <div class="mb-3">
+                                        <label class="form-label" for="name">
+                                            Nome e cognome / Ragione sociale
+                                            <span class="text-danger">*</span>
+                                        </label>
+                                        <input type="text" name="name" id="name"
+                                               class="form-control"
+                                               t-att-class="'is-invalid' if error and error.get('name') else ''"
+                                               t-att-value="form_data.get('name', '') if form_data else ''"
+                                               placeholder="Es. Mario Rossi oppure Rossi Amministrazioni Srl"
+                                               required="required" autofocus="autofocus"/>
+                                        <t t-if="error and error.get('name')">
+                                            <div class="invalid-feedback">
+                                                <t t-esc="error.get('name')"/>
+                                            </div>
+                                        </t>
+                                    </div>
+
+                                    <div class="row">
+                                        <div class="col-md-6 mb-3">
+                                            <label class="form-label" for="fiscalcode">
+                                                Codice Fiscale
+                                            </label>
+                                            <input type="text" name="fiscalcode" id="fiscalcode"
+                                                   class="form-control"
+                                                   t-att-class="'is-invalid' if error and error.get('fiscalcode') else ''"
+                                                   t-att-value="form_data.get('fiscalcode', '') if form_data else ''"
+                                                   placeholder="Es. RSSMRA80A01H501Z" maxlength="16"/>
+                                            <t t-if="error and error.get('fiscalcode')">
+                                                <div class="invalid-feedback d-block">
+                                                    <i class="fa fa-exclamation-circle me-1"/>
+                                                    <t t-esc="error.get('fiscalcode')"/>
+                                                </div>
+                                            </t>
+                                        </div>
+                                        <div class="col-md-6 mb-3">
+                                            <label class="form-label" for="vat">Partita IVA</label>
+                                            <input type="text" name="vat" id="vat"
+                                                   class="form-control"
+                                                   t-att-value="form_data.get('vat', '') if form_data else ''"
+                                                   placeholder="Es. IT01234567890"/>
+                                        </div>
+                                    </div>
+
+                                    <div class="row">
+                                        <div class="col-md-6 mb-3">
+                                            <label class="form-label" for="phone">Telefono</label>
+                                            <input type="tel" name="phone" id="phone"
+                                                   class="form-control"
+                                                   t-att-value="form_data.get('phone', '') if form_data else ''"
+                                                   placeholder="Es. +39 06 12345678"/>
+                                        </div>
+                                        <div class="col-md-6 mb-3">
+                                            <label class="form-label" for="pec_mail">
+                                                PEC <span class="text-danger">*</span>
+                                            </label>
+                                            <input type="email" name="pec_mail" id="pec_mail"
+                                                   class="form-control"
+                                                   t-att-class="'is-invalid' if error and error.get('pec_mail') else ''"
+                                                   t-att-value="form_data.get('pec_mail', '') if form_data else ''"
+                                                   placeholder="Es. mariorossi@pec.it"
+                                                   required="required"/>
+                                            <t t-if="error and error.get('pec_mail')">
+                                                <div class="invalid-feedback">
+                                                    <t t-esc="error.get('pec_mail')"/>
+                                                </div>
+                                            </t>
+                                        </div>
+                                    </div>
+
+                                    <!-- ====================================
+                                         INDIRIZZO
+                                    ===================================== -->
+                                    <h6 class="text-muted mt-4 mb-3">Indirizzo</h6>
+
+                                    <div class="mb-3">
+                                        <label class="form-label" for="street">
+                                            Via / Indirizzo <span class="text-danger">*</span>
+                                        </label>
+                                        <input type="text" name="street" id="street"
+                                               class="form-control"
+                                               t-att-class="'is-invalid' if error and error.get('street') else ''"
+                                               t-att-value="form_data.get('street', '') if form_data else ''"
+                                               placeholder="Es. Via Roma 1" required="required"/>
+                                        <t t-if="error and error.get('street')">
+                                            <div class="invalid-feedback">
+                                                <t t-esc="error.get('street')"/>
+                                            </div>
+                                        </t>
+                                    </div>
+
+                                    <div class="row">
+                                        <div class="col-md-3 mb-3">
+                                            <label class="form-label" for="zip">
+                                                CAP <span class="text-danger">*</span>
+                                            </label>
+                                            <input type="text" name="zip" id="zip"
+                                                   class="form-control"
+                                                   t-att-class="'is-invalid' if error and error.get('zip') else ''"
+                                                   t-att-value="form_data.get('zip', '') if form_data else ''"
+                                                   placeholder="Es. 00100" maxlength="5"
+                                                   required="required"/>
+                                            <t t-if="error and error.get('zip')">
+                                                <div class="invalid-feedback">
+                                                    <t t-esc="error.get('zip')"/>
+                                                </div>
+                                            </t>
+                                        </div>
+                                        <div class="col-md-6 mb-3">
+                                            <label class="form-label" for="city">
+                                                Città <span class="text-danger">*</span>
+                                            </label>
+                                            <input type="text" name="city" id="city"
+                                                   class="form-control"
+                                                   t-att-class="'is-invalid' if error and error.get('city') else ''"
+                                                   t-att-value="form_data.get('city', '') if form_data else ''"
+                                                   placeholder="Es. Roma" required="required"/>
+                                            <t t-if="error and error.get('city')">
+                                                <div class="invalid-feedback">
+                                                    <t t-esc="error.get('city')"/>
+                                                </div>
+                                            </t>
+                                        </div>
+                                        <div class="col-md-3 mb-3">
+                                            <label class="form-label" for="state_code">
+                                                Provincia
+                                            </label>
+                                            <t t-set="it_states" t-value="request.env['res.country.state'].sudo().search([('country_id.code', '=', 'IT')], order='name')"/>
+                                            <select name="state_code" id="state_code"
+                                                    class="form-select">
+                                                <option value="">-- Provincia --</option>
+                                                <t t-foreach="it_states" t-as="st">
+                                                    <option t-att-value="st.code"
+                                                            t-att-selected="'selected' if form_data and form_data.get('state_code','').upper() == st.code else None">
+                                                        <t t-esc="st.name"/> (<t t-esc="st.code"/>)
+                                                    </option>
+                                                </t>
+                                            </select>
+                                        </div>
+                                    </div>
+
+                                    <div class="mb-3">
+                                        <label class="form-label" for="country_id">
+                                            Paese / Nazione
+                                        </label>
+                                        <select name="country_id" id="country_id"
+                                                class="form-select">
+                                            <option value="">-- Seleziona paese --</option>
+                                            <t t-foreach="request.env['res.country'].sudo().search([], order='name')"
+                                               t-as="country">
+                                                <option t-att-value="country.id"
+                                                        t-att-selected="'selected' if (form_data and str(form_data.get('country_id','')) == str(country.id)) or (not form_data and country.code == 'IT') else None">
+                                                    <t t-esc="country.name"/>
+                                                </option>
+                                            </t>
+                                        </select>
+                                        <div class="form-text text-muted">
+                                            Default: Italia. Seleziona un altro paese se necessario.
+                                        </div>
+                                    </div>
+
+                                    <!-- ====================================
+                                         DATI BANCARI
+                                    ===================================== -->
+                                    <h6 class="text-muted mt-4 mb-3">Dati bancari</h6>
+
+                                    <div class="mb-3">
+                                        <label class="form-label" for="iban">IBAN</label>
+                                        <input type="text" name="iban" id="iban"
+                                               class="form-control"
+                                               t-att-class="'is-invalid' if error and error.get('iban') else ''"
+                                               t-att-value="form_data.get('iban', '') if form_data else ''"
+                                               placeholder="Es. IT60 X054 2811 1010 0000 0123 456"
+                                               maxlength="34" autocomplete="off"/>
+                                        <div id="bp_signup_iban_fb"
+                                             class="bp-iban-feedback form-text mt-1"/>
+                                        <t t-if="error and error.get('iban')">
+                                            <div class="invalid-feedback d-block">
+                                                <t t-esc="error.get('iban')"/>
+                                            </div>
+                                        </t>
+                                    </div>
+
+                                    <script>
+                                        document.addEventListener('DOMContentLoaded', function () {
+                                            if (window.BuildingPayIban) {
+                                                BuildingPayIban.init('iban', '', '', 'bp_signup_iban_fb');
+                                            }
+                                        });
+                                    </script>
+
+                                    <!-- ====================================
+                                         DATI OPERATIVI
+                                    ===================================== -->
+                                    <h6 class="text-muted mt-4 mb-3">Dati operativi</h6>
+
+                                    <div class="row">
+                                        <div class="col-md-6 mb-3">
+                                            <label class="form-label" for="applicativo">
+                                                Applicativo
+                                            </label>
+                                            <input type="text" name="applicativo" id="applicativo"
+                                                   class="form-control"
+                                                   t-att-value="form_data.get('applicativo', '') if form_data else ''"
+                                                   placeholder="Es. Danea, Gecos, Condominioware…"/>
+                                        </div>
+                                        <div class="col-md-6 mb-3">
+                                            <label class="form-label" for="sistema_pagamento">
+                                                Sistema di pagamento per le rate
+                                                <small class="text-muted">(es. mav, csv, xls)</small>
+                                                <span class="text-danger">*</span>
+                                            </label>
+                                            <input type="text" name="sistema_pagamento"
+                                                   id="sistema_pagamento"
+                                                   class="form-control"
+                                                   t-att-class="'is-invalid' if error and error.get('sistema_pagamento') else ''"
+                                                   t-att-value="form_data.get('sistema_pagamento', '') if form_data else ''"
+                                                   placeholder="Es. mav" maxlength="10"
+                                                   required="required"/>
+                                            <div class="form-text text-muted">Massimo 10 caratteri.</div>
+                                            <t t-if="error and error.get('sistema_pagamento')">
+                                                <div class="invalid-feedback">
+                                                    <t t-esc="error.get('sistema_pagamento')"/>
+                                                </div>
+                                            </t>
+                                        </div>
+                                    </div>
+
+                                    <!-- ====================================
+                                         NOTE
+                                    ===================================== -->
+                                    <h6 class="text-muted mt-4 mb-3">Note</h6>
+
+                                    <div class="mb-3">
+                                        <label class="form-label" for="note">Note</label>
+                                        <textarea name="note" id="note" class="form-control"
+                                                  rows="3"
+                                                  placeholder="Inserisci eventuali note..."><t t-esc="form_data.get('note', '') if form_data else ''"/></textarea>
+                                    </div>
+
+                                    <!-- ====================================
+                                         CREDENZIALI DI ACCESSO
+                                    ===================================== -->
+                                    <h6 class="text-muted mt-4 mb-3">Accesso</h6>
+
+                                    <div class="mb-3">
+                                        <label class="form-label" for="login">
+                                            Email (username) <span class="text-danger">*</span>
+                                        </label>
+                                        <input type="email" name="login" id="login"
+                                               class="form-control"
+                                               t-att-class="'is-invalid' if error and error.get('login') else ''"
+                                               t-att-value="form_data.get('login', '') if form_data else ''"
+                                               placeholder="La tua email" required="required"/>
+                                        <t t-if="error and error.get('login')">
+                                            <div class="invalid-feedback">
+                                                <t t-esc="error.get('login')"/>
+                                            </div>
+                                        </t>
+                                    </div>
+
+                                    <!-- Requisiti password -->
+                                    <div class="alert alert-info py-2 mb-3 small">
+                                        <i class="fa fa-info-circle me-1"/>
+                                        <strong>Requisiti password:</strong>
+                                        minimo 8 caratteri, almeno una lettera maiuscola,
+                                        una lettera minuscola e un carattere speciale
+                                        (es. <code>! @ # $ % &amp; * ?</code>).
+                                    </div>
+
+                                    <div class="row">
+                                        <div class="col-md-6 mb-3">
+                                            <label class="form-label" for="password">
+                                                Password <span class="text-danger">*</span>
+                                            </label>
+                                            <input type="password" name="password" id="password"
+                                                   class="form-control"
+                                                   t-att-class="'is-invalid' if error and error.get('password') else ''"
+                                                   required="required"
+                                                   oninput="bpCheckPassword(this.value)"/>
+                                            <!-- Indicatore robustezza live -->
+                                            <div id="bp_pwd_strength" class="mt-1" style="display:none;">
+                                                <div id="bp_pwd_bar" style="height:4px;border-radius:2px;transition:width .3s,background-color .3s;width:0%"/>
+                                                <div id="bp_pwd_rules" class="small mt-1">
+                                                    <span id="bp_r_len"  class="me-2">&#x25cf; 8+ caratteri</span>
+                                                    <span id="bp_r_low"  class="me-2">&#x25cf; minuscola</span>
+                                                    <span id="bp_r_up"   class="me-2">&#x25cf; maiuscola</span>
+                                                    <span id="bp_r_spec">&#x25cf; speciale</span>
+                                                </div>
+                                            </div>
+                                            <t t-if="error and error.get('password')">
+                                                <div class="invalid-feedback d-block">
+                                                    <t t-esc="error.get('password')"/>
+                                                </div>
+                                            </t>
+                                        </div>
+                                        <div class="col-md-6 mb-3">
+                                            <label class="form-label" for="confirm_password">
+                                                Conferma password <span class="text-danger">*</span>
+                                            </label>
+                                            <input type="password" name="confirm_password"
+                                                   id="confirm_password" class="form-control"
+                                                   t-att-class="'is-invalid' if error and error.get('confirm_password') else ''"
+                                                   required="required"/>
+                                            <t t-if="error and error.get('confirm_password')">
+                                                <div class="invalid-feedback">
+                                                    <t t-esc="error.get('confirm_password')"/>
+                                                </div>
+                                            </t>
+                                        </div>
+                                    </div>
+
+                                    <script>
+                                    function bpCheckPassword(v) {
+                                        var el = document.getElementById('bp_pwd_strength');
+                                        if (!el) return;
+                                        el.style.display = v.length ? '' : 'none';
+                                        var ok_len  = v.length >= 8;
+                                        var ok_low  = /[a-z]/.test(v);
+                                        var ok_up   = /[A-Z]/.test(v);
+                                        var ok_spec = /[^a-zA-Z0-9]/.test(v);
+                                        function mark(id, ok) {
+                                            var s = document.getElementById(id);
+                                            if (s) { s.style.color = ok ? '#198754' : '#dc3545'; }
+                                        }
+                                        mark('bp_r_len',  ok_len);
+                                        mark('bp_r_low',  ok_low);
+                                        mark('bp_r_up',   ok_up);
+                                        mark('bp_r_spec', ok_spec);
+                                        var score = [ok_len, ok_low, ok_up, ok_spec].filter(Boolean).length;
+                                        var bar = document.getElementById('bp_pwd_bar');
+                                        if (bar) {
+                                            bar.style.width = (score * 25) + '%';
+                                            bar.style.backgroundColor = ['#dc3545','#dc3545','#ffc107','#fd7e14','#198754'][score];
+                                        }
+                                    }
+                                    </script>
+
+                                    <!-- Privacy -->
+                                    <div class="mb-4 mt-3">
+                                        <div class="form-check">
+                                            <input type="checkbox" name="privacy_accepted"
+                                                   id="privacy_accepted" class="form-check-input"
+                                                   t-att-class="'is-invalid' if error and error.get('privacy_accepted') else ''"
+                                                   value="1" required="required"/>
+                                            <label class="form-check-label" for="privacy_accepted">
+                                                Ho letto e accetto la
+                                                <a href="https://progettiesoluzioni.it/privacy-policy/" target="_blank">
+                                                    Privacy Policy
+                                                </a>
+                                                <span class="text-danger">*</span>
+                                            </label>
+                                            <t t-if="error and error.get('privacy_accepted')">
+                                                <div class="invalid-feedback d-block">
+                                                    <t t-esc="error.get('privacy_accepted')"/>
+                                                </div>
+                                            </t>
+                                        </div>
+                                    </div>
+
+                                    <!-- Pulsanti — identici a /my/profilo -->
+                                    <div class="d-flex gap-2 mt-4">
+                                        <button type="submit" class="btn btn-primary">
+                                            <i class="fa fa-user-plus me-2"/>
+                                            Registrati
+                                        </button>
+                                        <a href="/web/login" class="btn btn-outline-secondary">
+                                            <i class="fa fa-arrow-left me-2"/>
+                                            Hai già un account? Accedi
+                                        </a>
+                                    </div>
+
+                                </form>
+                            </div><!-- /card-body -->
+                        </div><!-- /card -->
+
+                        </t><!-- /t-if referrer_code valido -->
+
+                    </div><!-- /col-md-8 -->
+                </div><!-- /row -->
+            </div><!-- /container -->
+        </t>
+    </template>
+</odoo>

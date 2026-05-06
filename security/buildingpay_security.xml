@@ -1,0 +1,55 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <!-- ==========================================
+         CATEGORIE
+    =========================================== -->
+    <record id="module_category_buildingpay" model="ir.module.category">
+        <field name="name">BuildingPay</field>
+        <field name="description">Gestione Amministratori Condomini</field>
+        <field name="sequence">50</field>
+    </record>
+
+    <!-- ==========================================
+         GRUPPI DI SICUREZZA
+    =========================================== -->
+
+    <!-- Gruppo base: accesso in lettura al modulo -->
+    <record id="group_buildingpay_user" model="res.groups">
+        <field name="name">Utente BuildingPay</field>
+        <field name="category_id" ref="module_category_buildingpay"/>
+        <field name="implied_ids" eval="[(4, ref('base.group_user'))]"/>
+    </record>
+
+    <!-- Gruppo manager: può gestire il checkbox Amministratore -->
+    <record id="group_buildingpay_manager" model="res.groups">
+        <field name="name">Manager BuildingPay</field>
+        <field name="category_id" ref="module_category_buildingpay"/>
+        <field name="implied_ids" eval="[(4, ref('group_buildingpay_user'))]"/>
+    </record>
+
+    <!-- ==========================================
+         CATEGORIA E GRUPPO: BuildingPay - Referrer
+         Selezionabile nelle impostazioni utente:
+         vuoto = nessun accesso al tab Referrer
+         Responsabile = accesso completo al tab Referrer
+    =========================================== -->
+    <record id="module_category_buildingpay_referrer" model="ir.module.category">
+        <field name="name">BuildingPay - Referrer</field>
+        <field name="description">Gestione dei referrer BuildingPay</field>
+        <field name="sequence">51</field>
+    </record>
+
+    <record id="group_buildingpay_referrer_responsabile" model="res.groups">
+        <field name="name">Responsabile</field>
+        <field name="category_id" ref="module_category_buildingpay_referrer"/>
+        <field name="implied_ids" eval="[(4, ref('group_buildingpay_user'))]"/>
+    </record>
+
+    <!-- Gruppo responsabile amministrativo: vede menu contabilità -->
+    <record id="group_responsabile_amministrativo" model="res.groups">
+        <field name="name">Responsabile Amministrativo Condomini</field>
+        <field name="category_id" ref="module_category_buildingpay"/>
+        <field name="implied_ids" eval="[(4, ref('group_buildingpay_manager'))]"/>
+    </record>
+
+</odoo>

@@ -1,0 +1,51 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <!-- ================================================
+         MENU PRINCIPALE BUILDINGPAY
+    ================================================= -->
+    <menuitem id="menu_buildingpay_root"
+              name="BuildingPay"
+              sequence="90"
+              web_icon="BuildingPay_onboarding_v15,static/description/icon.png"
+              groups="BuildingPay_onboarding_v15.group_buildingpay_user"/>
+
+    <!-- ================================================
+         MENU: CONFIGURAZIONE
+    ================================================= -->
+    <menuitem id="menu_buildingpay_config_root"
+              name="Configurazione"
+              parent="menu_buildingpay_root"
+              sequence="100"
+              groups="BuildingPay_onboarding_v15.group_buildingpay_manager"/>
+
+    <menuitem id="menu_buildingpay_config"
+              name="Impostazioni BuildingPay"
+              parent="menu_buildingpay_config_root"
+              action="action_buildingpay_config"
+              sequence="10"
+              groups="BuildingPay_onboarding_v15.group_buildingpay_manager"/>
+
+    <!-- ================================================
+         MENU: ISTAT COMUNI
+    ================================================= -->
+    <menuitem id="menu_buildingpay_istat_root"
+              name="ISTAT Comuni"
+              parent="menu_buildingpay_config_root"
+              sequence="50"
+              groups="BuildingPay_onboarding_v15.group_buildingpay_manager"/>
+
+    <menuitem id="menu_buildingpay_istat_list"
+              name="Tabella Codici ISTAT"
+              parent="menu_buildingpay_istat_root"
+              action="action_buildingpay_comune_istat"
+              sequence="10"
+              groups="BuildingPay_onboarding_v15.group_buildingpay_manager"/>
+
+    <menuitem id="menu_buildingpay_istat_import"
+              name="Importa CSV ISTAT"
+              parent="menu_buildingpay_istat_root"
+              action="action_wizard_import_istat"
+              sequence="20"
+              groups="BuildingPay_onboarding_v15.group_buildingpay_manager"/>
+
+</odoo>

@@ -1,0 +1,206 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <!-- ================================================
+         PAGINA PORTALE: Dati Personali Amministratore
+         /my/profilo
+    ================================================= -->
+    <template id="portal_profilo"
+              name="BuildingPay - Dati Personali Amministratore">
+        <t t-call="portal.portal_layout">
+            <t t-set="breadcrumbs_searchbar" t-value="False"/>
+
+            <t t-call="portal.portal_searchbar">
+                <t t-set="title">I miei dati</t>
+            </t>
+
+            <div class="container mt-4">
+                <div class="row justify-content-center">
+                    <div class="col-md-8">
+
+                        <!-- Messaggi feedback -->
+                        <t t-if="request.params.get('success')">
+                            <div class="alert alert-success alert-dismissible fade show">
+                                <i class="fa fa-check-circle me-2"/>
+                                Dati aggiornati con successo.
+                                <button type="button" class="btn-close" data-bs-dismiss="alert"/>
+                            </div>
+                        </t>
+                        <t t-if="request.params.get('error')">
+                            <div class="alert alert-danger alert-dismissible fade show">
+                                <i class="fa fa-exclamation-circle me-2"/>
+                                <t t-if="request.params.get('error') == 'iban_invalid'">
+                                    IBAN non valido — verificare il codice inserito.
+                                </t>
+                                <t t-else="">
+                                    Si è verificato un errore. Riprova o contatta l'assistenza.
+                                </t>
+                                <button type="button" class="btn-close" data-bs-dismiss="alert"/>
+                            </div>
+                        </t>
+
+                        <div class="card">
+                            <div class="card-header">
+                                <i class="fa fa-user-circle-o me-2"/>
+                                <strong>I miei dati personali</strong>
+                            </div>
+                            <div class="card-body">
+                                <form action="/my/profilo/save" method="post">
+                                    <input type="hidden" name="csrf_token"
+                                           t-att-value="request.csrf_token()"/>
+
+                                    <!-- ========================================
+                                         DATI FISCALI E DI CONTATTO
+                                    ========================================= -->
+                                    <h6 class="text-muted mb-3">Dati fiscali e di contatto</h6>
+
+                                    <div class="row">
+                                        <div class="col-md-6 mb-3">
+                                            <label for="prof_fiscalcode" class="form-label">
+                                                Codice Fiscale
+                                            </label>
+                                            <input type="text"
+                                                   id="prof_fiscalcode"
+                                                   name="fiscalcode"
+                                                   class="form-control"
+                                                   maxlength="16"
+                                                   t-att-value="partner.fiscalcode or ''"
+                                                   placeholder="Es. RSSMRA80A01H501Z"/>
+                                        </div>
+                                        <div class="col-md-6 mb-3">
+                                            <label for="prof_vat" class="form-label">
+                                                Partita IVA
+                                            </label>
+                                            <input type="text"
+                                                   id="prof_vat"
+                                                   name="vat"
+                                                   class="form-control"
+                                                   t-att-value="partner.vat or ''"
+                                                   placeholder="Es. IT01234567890"/>
+                                        </div>
+                                    </div>
+
+                                    <div class="mb-3">
+                                        <label for="prof_pec" class="form-label">
+                                            PEC
+                                        </label>
+                                        <input type="email"
+                                               id="prof_pec"
+                                               name="pec_mail"
+                                               class="form-control"
+                                               t-att-value="partner.pec_mail or ''"
+                                               placeholder="Es. mariorossi@pec.it"/>
+                                    </div>
+
+                                    <!-- ========================================
+                                         DATI OPERATIVI
+                                    ========================================= -->
+                                    <h6 class="text-muted mt-4 mb-3">Dati operativi</h6>
+
+                                    <div class="mb-3">
+                                        <label for="prof_nome_promotore" class="form-label">
+                                            Nome Promotore
+                                        </label>
+                                        <input type="text"
+                                               id="prof_nome_promotore"
+                                               name="nome_promotore"
+                                               class="form-control bg-light"
+                                               t-att-value="partner.referrer_id.name or ''"
+                                               placeholder="Nessun promotore associato"
+                                               readonly="readonly"/>
+                                        <div class="form-text text-muted small">
+                                            Il promotore viene assegnato automaticamente
+                                            dal link di invito utilizzato durante la registrazione.
+                                        </div>
+                                    </div>
+
+                                    <div class="row">
+                                        <div class="col-md-6 mb-3">
+                                            <label for="prof_applicativo" class="form-label">
+                                                Applicativo
+                                            </label>
+                                            <input type="text"
+                                                   id="prof_applicativo"
+                                                   name="applicativo"
+                                                   class="form-control"
+                                                   t-att-value="partner.applicativo or ''"
+                                                   placeholder="Es. Danea, Gecos…"/>
+                                        </div>
+                                        <div class="col-md-6 mb-3">
+                                            <label for="prof_sistema_pagamento" class="form-label">
+                                                Sistema di pagamento per le rate
+                                                <small class="text-muted">(es. mav, csv, xls)</small>
+                                            </label>
+                                            <input type="text"
+                                                   id="prof_sistema_pagamento"
+                                                   name="sistema_pagamento"
+                                                   class="form-control"
+                                                   maxlength="10"
+                                                   t-att-value="partner.sistema_pagamento or ''"
+                                                   placeholder="Es. mav"/>
+                                            <div class="form-text text-muted">Massimo 10 caratteri.</div>
+                                        </div>
+                                    </div>
+
+                                    <!-- ========================================
+                                         DATI BANCARI
+                                    ========================================= -->
+                                    <h6 class="text-muted mt-4 mb-3">Dati bancari</h6>
+
+                                    <div class="mb-3">
+                                        <label for="prof_iban" class="form-label">IBAN</label>
+                                        <input type="text"
+                                               id="prof_iban"
+                                               name="iban"
+                                               class="form-control"
+                                               maxlength="34"
+                                               autocomplete="off"
+                                               t-att-value="bank.acc_number if bank else ''"
+                                               placeholder="Es. IT60 X054 2811 1010 0000 0123 456"/>
+                                        <!-- Feedback validazione IBAN in tempo reale -->
+                                        <div id="bp_profilo_iban_fb" class="bp-iban-feedback form-text mt-1"/>
+                                    </div>
+
+                                    <!-- Inizializzazione validatore IBAN (form profilo) -->
+                                    <script>
+                                        document.addEventListener('DOMContentLoaded', function () {
+                                            if (window.BuildingPayIban) {
+                                                BuildingPayIban.init(
+                                                    'prof_iban', '', '', 'bp_profilo_iban_fb'
+                                                );
+                                            }
+                                        });
+                                    </script>
+
+                                    <!-- ========================================
+                                         NOTE
+                                    ========================================= -->
+                                    <h6 class="text-muted mt-4 mb-3">Note</h6>
+
+                                    <div class="mb-3">
+                                        <label for="prof_note" class="form-label">Note</label>
+                                        <textarea id="prof_note"
+                                                  name="note"
+                                                  class="form-control"
+                                                  rows="4"
+                                                  placeholder="Inserisci eventuali note..."><t t-esc="note_plain"/></textarea>
+                                    </div>
+
+                                    <!-- Pulsanti -->
+                                    <div class="d-flex gap-2 mt-4">
+                                        <button type="submit" class="btn btn-primary">
+                                            <i class="fa fa-save me-2"/>Salva modifiche
+                                        </button>
+                                        <a href="/my/home" class="btn btn-outline-secondary">
+                                            <i class="fa fa-arrow-left me-2"/>Annulla
+                                        </a>
+                                    </div>
+                                </form>
+                            </div>
+                        </div>
+
+                    </div>
+                </div>
+            </div>
+        </t>
+    </template>
+</odoo>

@@ -1,0 +1,76 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <!-- ================================================
+         ESTENSIONE HOME PORTALE
+         Aggiunge le sezioni Contratti e Condomini alla home
+         del portale per gli utenti Amministratore BuildingPay.
+
+         NOTA: usiamo HTML diretto invece di t-call="portal.portal_docs_entry"
+         perché in Odoo 17 EE quel template si aspetta 'icon' come URL immagine
+         (src), non come classe Font Awesome — il rendering risultava in
+         testo semplice senza icona né descrizione.
+         Il wrapper col-lg-6 è incluso qui, come fa internamente portal_docs_entry.
+
+         Le sezioni sono visibili solo ai partner con is_amministratore = True,
+         passato da _prepare_home_portal_values() nel controller.
+    ================================================= -->
+    <template id="portal_my_home_buildingpay"
+              name="BuildingPay - Sezioni Home Portale"
+              inherit_id="portal.portal_my_home"
+              priority="20">
+
+        <xpath expr="//div[hasclass('o_portal_docs')]" position="inside">
+            <t t-if="request.env.user.partner_id.is_amministratore">
+
+                <!-- ── Sezione Contratti ───────────────────────────────── -->
+                <div class="col-lg-6">
+                    <a href="/my/contratti"
+                       class="d-flex align-items-center py-3 ps-2 pe-0 h-100 text-decoration-none text-reset">
+                        <span class="d-inline-block me-3 flex-shrink-0">
+                            <i class="fa fa-file-text-o fa-4x text-muted"/>
+                        </span>
+                        <div>
+                            <div class="fw-bold">Contratti</div>
+                            <div class="text-muted small">
+                                Accordo amministratore e Accordo Condomini Aggregati
+                            </div>
+                        </div>
+                    </a>
+                </div>
+
+                <!-- ── Sezione Condomini ───────────────────────────────── -->
+                <div class="col-lg-6">
+                    <a href="/my/condomini"
+                       class="d-flex align-items-center py-3 ps-2 pe-0 h-100 text-decoration-none text-reset">
+                        <span class="d-inline-block me-3 flex-shrink-0">
+                            <i class="fa fa-building-o fa-4x text-muted"/>
+                        </span>
+                        <div>
+                            <div class="fw-bold">Condomini</div>
+                            <div class="text-muted small">
+                                Gestisci i tuoi indirizzi condominio
+                            </div>
+                        </div>
+                    </a>
+                </div>
+
+                <!-- ── Sezione Dati Personali ─────────────────────────── -->
+                <div class="col-lg-6">
+                    <a href="/my/profilo"
+                       class="d-flex align-items-center py-3 ps-2 pe-0 h-100 text-decoration-none text-reset">
+                        <span class="d-inline-block me-3 flex-shrink-0">
+                            <i class="fa fa-user-circle-o fa-4x text-muted"/>
+                        </span>
+                        <div>
+                            <div class="fw-bold">I miei dati</div>
+                            <div class="text-muted small">
+                                Modifica codice fiscale, IBAN e dati bancari
+                            </div>
+                        </div>
+                    </a>
+                </div>
+
+            </t>
+        </xpath>
+    </template>
+</odoo>
