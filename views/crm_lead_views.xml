@@ -1,0 +1,53 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <!--
+        BuildingPay — Estensione viste CRM Lead/Opportunity
+        Aggiunge il campo referrer_id alla form e alla search view.
+
+        NOTA: l'ID della form view base di crm.lead in Odoo 17 è
+        crm.view_crm_case_form_view (opportunità).
+        Se l'installazione usa un ID diverso, aggiornare inherit_id di conseguenza.
+    -->
+
+    <!-- ══════════════════════════════════════════════════════
+         FORM VIEW: aggiunge referrer_id dopo l'assegnatario
+    ══════════════════════════════════════════════════════ -->
+    <record id="crm_lead_form_buildingpay" model="ir.ui.view">
+        <field name="name">crm.lead.form.buildingpay</field>
+        <field name="model">crm.lead</field>
+        <field name="inherit_id" ref="crm.view_crm_case_form_view"/>
+        <field name="arch" type="xml">
+            <xpath expr="//field[@name='user_id']" position="after">
+                <field name="referrer_id" string="Referrer BuildingPay"/>
+            </xpath>
+        </field>
+    </record>
+
+    <!-- ══════════════════════════════════════════════════════
+         SEARCH VIEW: ricerca per nome referrer + group by referrer
+    ══════════════════════════════════════════════════════ -->
+    <record id="crm_lead_search_buildingpay" model="ir.ui.view">
+        <field name="name">crm.lead.search.buildingpay</field>
+        <field name="model">crm.lead</field>
+        <field name="inherit_id" ref="crm.view_crm_lead_filter"/>
+        <field name="arch" type="xml">
+
+            <!-- Campo di ricerca per nome del referrer -->
+            <xpath expr="//search/field[1]" position="before">
+                <field name="referrer_id"
+                       string="Referrer BuildingPay"
+                       filter_domain="[('referrer_id.name', 'ilike', self)]"/>
+            </xpath>
+
+            <!-- Group by referrer nella sezione raggruppamenti -->
+            <xpath expr="//search/group" position="inside">
+                <separator string="BuildingPay"/>
+                <filter string="Referrer BuildingPay"
+                        name="group_by_referrer"
+                        context="{'group_by': 'referrer_id'}"/>
+            </xpath>
+
+        </field>
+    </record>
+
+</odoo>
