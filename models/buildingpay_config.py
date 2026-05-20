@@ -161,6 +161,38 @@ class BuildingPayConfig(models.Model):
     )
 
     # -------------------------------------------------------
+    # CRM: addetto vendite di default per le richieste informazioni
+    # -------------------------------------------------------
+    default_salesperson_id = fields.Many2one(
+        comodel_name='res.users',
+        string='Addetto vendite di default (Richieste informazioni)',
+        help='Utente assegnato ai lead CRM creati dalle richieste di informazioni '
+             'quando il referrer non ha un addetto vendite configurato.',
+    )
+
+    # -------------------------------------------------------
+    # CRM: attività automatica alla creazione del lead
+    # -------------------------------------------------------
+    activity_info_lead_days = fields.Integer(
+        string='Giorni scadenza attività (richiesta informazioni)',
+        default=2,
+        help='Numero di giorni dalla richiesta per la scadenza dell\'attività To Do.',
+    )
+    activity_info_lead_responsible_1_id = fields.Many2one(
+        comodel_name='res.users',
+        string='Assegnatario 1',
+        help='Primo utente a cui viene assegnata l\'attività.',
+    )
+    activity_info_lead_responsible_2_id = fields.Many2one(
+        comodel_name='res.users',
+        string='Assegnatario 2',
+    )
+    activity_info_lead_responsible_3_id = fields.Many2one(
+        comodel_name='res.users',
+        string='Assegnatario 3',
+    )
+
+    # -------------------------------------------------------
     # Destinatari email report Excel
     # -------------------------------------------------------
     condomini_attivati_email = fields.Char(

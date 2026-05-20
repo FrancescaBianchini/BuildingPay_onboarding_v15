@@ -38,18 +38,7 @@
                         <button type="button" class="btn-close" data-bs-dismiss="alert"/>
                     </div>
                 </t>
-                <t t-if="request.params.get('error') == 'not_validated'">
-                    <div class="alert alert-warning alert-dismissible fade show">
-                        <i class="fa fa-clock-o me-2"/>
-                        <strong>Account in attesa di validazione.</strong>
-                        Il tuo profilo è stato registrato correttamente e
-                        sarà verificato al più presto dal nostro team.
-                        Potrai aggiungere condomini non appena la tua
-                        registrazione sarà confermata.
-                        <button type="button" class="btn-close" data-bs-dismiss="alert"/>
-                    </div>
-                </t>
-                <t t-elif="request.params.get('error')">
+                <t t-if="request.params.get('error')">
                     <div class="alert alert-danger alert-dismissible fade show">
                         <i class="fa fa-exclamation-circle me-2"/>
                         Si è verificato un errore. Riprova o contatta l'assistenza.
@@ -57,17 +46,7 @@
                     </div>
                 </t>
 
-                <!-- Banner account non ancora validato (senza ?error= nell'URL) -->
-                <t t-if="not is_validato and not request.params.get('error')">
-                    <div class="alert alert-info">
-                        <i class="fa fa-info-circle me-2"/>
-                        <strong>Registrazione in attesa di conferma.</strong>
-                        Il nostro team verificherà i tuoi dati e abiliterà
-                        la creazione di condomini al più presto.
-                    </div>
-                </t>
-
-                <!-- Pulsante aggiungi: visibile solo se validato -->
+                <!-- Pulsante aggiungi -->
                 <div class="d-flex justify-content-between align-items-center mb-4">
                     <h4 class="mb-0">
                         Condomini gestiti
@@ -75,19 +54,10 @@
                             <t t-esc="len(condomini)"/>
                         </span>
                     </h4>
-                    <t t-if="is_validato">
-                        <a href="/my/condomini/new" class="btn btn-primary">
-                            <i class="fa fa-plus me-2"/>
-                            Aggiungi Condominio
-                        </a>
-                    </t>
-                    <t t-else="">
-                        <button class="btn btn-primary" disabled="disabled"
-                                title="Account in attesa di validazione">
-                            <i class="fa fa-lock me-2"/>
-                            Aggiungi Condominio
-                        </button>
-                    </t>
+                    <a href="/my/condomini/new" class="btn btn-primary">
+                        <i class="fa fa-plus me-2"/>
+                        Aggiungi Condominio
+                    </a>
                 </div>
 
                 <!-- Lista condomini -->
@@ -168,16 +138,10 @@
                         <i class="fa fa-building-o fa-4x text-muted mb-3 d-block"/>
                         <h5 class="text-muted">Nessun condominio registrato</h5>
                         <p class="text-muted">
-                            <t t-if="is_validato">
-                                Aggiungi il tuo primo condominio cliccando su
-                                "Aggiungi Condominio".
-                            </t>
-                            <t t-else="">
-                                Il tuo account è in attesa di validazione.
-                                Potrai aggiungere condomini non appena confermato.
-                            </t>
+                            Aggiungi il tuo primo condominio cliccando su
+                            "Aggiungi Condominio".
                         </p>
-                        <a t-if="is_validato" href="/my/condomini/new" class="btn btn-primary mt-2">
+                        <a href="/my/condomini/new" class="btn btn-primary mt-2">
                             <i class="fa fa-plus me-2"/>
                             Aggiungi Condominio
                         </a>
@@ -355,6 +319,20 @@
                                             </t>
                                         </div>
                                         <div class="col-md-6 mb-3">
+                                            <label for="condo_vat" class="form-label">
+                                                Partita IVA
+                                            </label>
+                                            <input type="text"
+                                                   id="condo_vat"
+                                                   name="vat"
+                                                   class="form-control"
+                                                   t-att-value="form_data.get('vat', '') if form_data else (condominio.vat if condominio else '')"
+                                                   placeholder="Es. 01234567890"/>
+                                        </div>
+                                    </div>
+
+                                    <div class="row">
+                                        <div class="col-md-6 mb-3">
                                             <label for="condo_pec" class="form-label">
                                                 Email PEC
                                             </label>
@@ -372,6 +350,7 @@
                                         <label for="condo_iban" class="form-label">
                                             IBAN <span class="text-danger">*</span>
                                         </label>
+                                        <div class="form-text mb-2">Inserire qui l'IBAN del condominio</div>
                                         <input type="text"
                                                id="condo_iban"
                                                name="iban"

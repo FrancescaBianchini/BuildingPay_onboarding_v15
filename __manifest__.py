@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 {
     'name': 'BuildingPay Onboarding',
-    'version': '17.0.1.0.0',
+    'version': '17.0.2.0.0',
     'category': 'Custom',
     'summary': 'BuildingPay v30 - Gestione Amministratori Condomini e Pagamenti PagoPa',
     'description': """
@@ -27,6 +27,8 @@ PagoPa e retrocessioni verso amministratori e referrer.
         # da qualunque localizzazione italiana installata nell'ambiente.
         # Rileva e crea automaticamente res.bank dall'IBAN (usa schwifty internamente)
         'base_bank_from_iban',
+        # CRM: gestione lead da richieste di informazioni portal
+        'crm',
     ],
     'data': [
         # Security (load first)
@@ -42,6 +44,7 @@ PagoPa e retrocessioni verso amministratori e referrer.
         'views/res_partner_views.xml',
         'views/buildingpay_comune_istat_views.xml',
         'views/buildingpay_menus.xml',
+        'views/crm_lead_views.xml',
         # Portal templates
         'templates/portal_home_inherit.xml',
         'templates/portal_registration.xml',

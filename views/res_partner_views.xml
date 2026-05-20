@@ -2,8 +2,7 @@
 <odoo>
 
     <!-- ═══════════════════════════════════════════════════════════════
-         SEARCH VIEW — Aggiunge Applicativo e Sistema di pagamento
-         come campi ricercabili e raggruppabili nella vista Contatti
+         SEARCH VIEW — Filtri e raggruppamenti BuildingPay nella vista Contatti
     ═══════════════════════════════════════════════════════════════ -->
     <record id="res_partner_search_buildingpay" model="ir.ui.view">
         <field name="name">res.partner.search.buildingpay</field>
@@ -21,16 +20,39 @@
                        filter_domain="[('sistema_pagamento', 'ilike', self)]"/>
             </xpath>
 
-            <!-- Filtri per flag BuildingPay -->
+            <!-- ── Filtri BuildingPay: tutti in un'unica sezione etichettata ── -->
             <xpath expr="//group" position="before">
-                <filter string="È referrer"
+                <separator string="BuildingPay"/>
+                <filter string="È amministratore"
+                        name="filter_is_amministratore"
+                        domain="[('is_amministratore', '=', True)]"/>
+                <filter string="Non è amministratore"
+                        name="filter_not_amministratore"
+                        domain="[('is_amministratore', '=', False)]"/>
+                <filter string="Amministratori validati"
+                        name="filter_amministratori_validati"
+                        domain="[('is_amministratore', '=', True), ('is_amministratore_validato', '=', True)]"/>
+                <filter string="Amministratori da validare"
+                        name="filter_amministratori_da_validare"
+                        domain="[('is_amministratore', '=', True), ('is_amministratore_validato', '=', False)]"/>
+                <filter string="È un referrer"
                         name="filter_is_referrer"
                         domain="[('is_referrer', '=', True)]"/>
+                <filter string="È stato invitato da un referrer"
+                        name="filter_has_referrer"
+                        domain="[('referrer_id', '!=', False)]"/>
+                <filter string="È un condominio"
+                        name="filter_is_condominio"
+                        domain="[('type', '=', 'condominio')]"/>
                 <separator/>
             </xpath>
 
-            <!-- Group By -->
+            <!-- ── Raggruppamenti BuildingPay ── -->
             <xpath expr="//group" position="inside">
+                <separator string="BuildingPay"/>
+                <filter string="Referrer"
+                        name="group_by_referrer"
+                        context="{'group_by': 'referrer_id'}"/>
                 <filter string="Applicativo"
                         name="group_by_applicativo"
                         context="{'group_by': 'applicativo'}"/>

@@ -135,6 +135,45 @@
 
                         </page>
 
+                        <!-- Tab: CRM / Richieste informazioni -->
+                        <page string="CRM / Richieste informazioni" name="crm_settings">
+                            <p class="text-muted">
+                                Configurazione per la gestione dei lead CRM generati
+                                dalle richieste di informazioni ricevute dal form di registrazione.
+                            </p>
+
+                            <separator string="Addetto vendite"/>
+                            <group>
+                                <group>
+                                    <field name="default_salesperson_id"
+                                           options="{'no_create': True}"/>
+                                </group>
+                            </group>
+
+                            <separator string="Attività automatica alla ricezione di una richiesta informazioni"/>
+                            <p class="text-muted small">
+                                Quando un visitatore invia una richiesta di informazioni dal form di registrazione,
+                                viene creata un'attività "To Do" per ogni assegnatario configurato.
+                                Scadenza: oggi + giorni configurati.
+                            </p>
+                            <group>
+                                <group string="Scadenza">
+                                    <field name="activity_info_lead_days"/>
+                                </group>
+                                <group string="Assegnatari (fino a 3)">
+                                    <field name="activity_info_lead_responsible_1_id"
+                                           string="Assegnatario 1"
+                                           options="{'no_create': True}"/>
+                                    <field name="activity_info_lead_responsible_2_id"
+                                           string="Assegnatario 2"
+                                           options="{'no_create': True}"/>
+                                    <field name="activity_info_lead_responsible_3_id"
+                                           string="Assegnatario 3"
+                                           options="{'no_create': True}"/>
+                                </group>
+                            </group>
+                        </page>
+
                         <!-- Tab: Destinatari email -->
                         <page string="Destinatari Email" name="emails">
                             <group>

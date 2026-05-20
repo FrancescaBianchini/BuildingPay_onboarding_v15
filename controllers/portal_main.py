@@ -15,6 +15,30 @@ except ImportError:
 _logger = logging.getLogger(__name__)
 
 
+def _normalize_vat_prefix(env, vat, country_id_val):
+    """Aggiunge il prefisso IT alla P.IVA se il paese è Italia e il prefisso manca.
+    Un prefisso è considerato già presente se i primi due caratteri sono entrambe lettere
+    (es. 'IT', 'DE', 'FR', …). In quel caso il valore non viene modificato.
+    Per paesi diversi dall'Italia il valore viene restituito invariato.
+    Restituisce stringa vuota se vat è vuoto/None.
+    """
+    if not vat:
+        return ''
+    vat = vat.strip().upper()
+    # Se i primi due caratteri sono già due lettere il prefisso paese è già presente
+    if len(vat) >= 2 and vat[0].isalpha() and vat[1].isalpha():
+        return vat
+    if not country_id_val:
+        return vat
+    try:
+        country = env['res.country'].sudo().browse(int(country_id_val))
+        if country.exists() and country.code == 'IT':
+            vat = 'IT' + vat
+    except (ValueError, TypeError):
+        pass
+    return vat
+
+
 class BuildingPayPortal(CustomerPortal):
     """
     Controller portale BuildingPay.
@@ -1106,8 +1130,11 @@ class BuildingPayPortal(CustomerPortal):
 
             # Partita IVA: usa savepoint isolato perché Odoo può
             # applicare una constraint di formato (es. IT + 11 cifre).
+            # Il prefisso IT viene aggiunto automaticamente se il paese del partner è Italia.
             vat = params.get('vat', '').strip()
             if vat:
+                country_id_val = partner.country_id.id if partner.country_id else None
+                vat = _normalize_vat_prefix(request.env, vat, country_id_val)
                 try:
                     with request.env.cr.savepoint():
                         partner.sudo().write({'vat': vat})
@@ -1162,7 +1189,6 @@ class BuildingPayPortal(CustomerPortal):
         values = {
             'partner': partner,
             'condomini': condomini,
-            'is_validato': partner.sudo().is_amministratore_validato,
             'page_name': 'condomini',
         }
         return request.render('BuildingPay_onboarding_v15.portal_condomini', values)
@@ -1174,10 +1200,6 @@ class BuildingPayPortal(CustomerPortal):
 
         if not partner.is_amministratore:
             return request.redirect('/my')
-
-        # Blocco: l'amministratore non è ancora stato validato dall'operatore
-        if not partner.sudo().is_amministratore_validato:
-            return request.redirect('/my/condomini?error=not_validated')
 
         countries = request.env['res.country'].sudo().search([])
         banks = request.env['res.bank'].sudo().search([], order='name')
@@ -1201,10 +1223,6 @@ class BuildingPayPortal(CustomerPortal):
 
         if not partner.is_amministratore:
             return request.redirect('/my')
-
-        # Blocco POST: doppio controllo server-side (non aggirabile via form diretto)
-        if not partner.sudo().is_amministratore_validato:
-            return request.redirect('/my/condomini?error=not_validated')
 
         params = request.params
         errors = self._validate_condominio_form(params)
@@ -1464,6 +1482,9 @@ class BuildingPayPortal(CustomerPortal):
         state_id = params.get('state_id')
         if state_id:
             vals['state_id'] = int(state_id)
+        # Partita IVA: aggiunge il prefisso IT se il paese è Italia e manca
+        vat = params.get('vat', '').strip()
+        vals['vat'] = _normalize_vat_prefix(request.env, vat, country_id) or False
         return vals
 
 

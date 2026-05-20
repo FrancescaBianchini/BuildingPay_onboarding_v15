@@ -262,6 +262,12 @@ class ResPartner(models.Model):
         string='Data archiviazione',
         readonly=True,
     )
+    dismesso_comunicato_delivery = fields.Boolean(
+        string='Dismesso e già comunicato a Delivery',
+        default=False,
+        help='Impostato automaticamente dopo che il condominio dismesso è stato incluso '
+             'nel report giornaliero. Viene azzerato se il condominio viene riattivato.',
+    )
 
     # -------------------------------------------------------
     # Campi italiani (compatibili con l10n_it_edi)
@@ -401,7 +407,18 @@ class ResPartner(models.Model):
                 if not partner.is_amministratore_validato and partner.is_amministratore:
                     to_validate_email.append(partner.id)
 
+        # Rileva condomini che passano da inactive → active (disarchiviazione)
+        # per azzerare il flag dismesso_comunicato_delivery
+        to_reset_delivery = self.env['res.partner']
+        if vals.get('active') is True:
+            to_reset_delivery = self.with_context(active_test=False).filtered(
+                lambda p: p.type == 'condominio' and not p.active
+            )
+
         result = super().write(vals)
+
+        if to_reset_delivery:
+            to_reset_delivery.write({'dismesso_comunicato_delivery': False})
 
         # Invia email di abilitazione per ogni amministratore appena validato
         for pid in to_validate_email:
@@ -699,7 +716,8 @@ class ResPartner(models.Model):
     # Formato output: "Dati Enti Aggregati_PagoPa"
     #
     # Struttura file (2 righe di intestazione + dati da riga 3):
-    #   Riga 1 — gruppi: A1:C1 vuote | D1:L1 "Ente" | M1 "Piattaforma pagoPA"
+    #   Riga 1 — gruppi: A1:C1 "Identificativi" | D1:L1 "Ente" |
+    #                    M1 "Piattaforma pagoPA" | N1:O1 "Dati Amministratore" | P1 "Stato"
     #   Riga 2 — colonne:
     #     A  ID Esterno Amministratore
     #     B  Nome Amministratore
@@ -714,12 +732,15 @@ class ResPartner(models.Model):
     #     K  CAP
     #     L  Codice Istat
     #     M  IBAN
+    #     N  Applicativo (dall'amministratore)
+    #     O  Sistema di Pagamento (dall'amministratore)
     # -------------------------------------------------------
     @api.model
     def action_send_daily_condomini_report(self):
-        """Genera e invia il report Excel giornaliero dei condomini (attivi e dismessi)
-        nel formato 'Dati Enti Aggregati_PagoPa'.
-        Include colonna 'Stato' (attivo/dismesso).
+        """Genera e invia il report Excel giornaliero dei condomini (attivi e dismessi
+        non ancora comunicati) nel formato 'Dati Enti Aggregati_PagoPa'.
+        Dopo l'invio, i condomini dismessi inclusi vengono marcati come
+        dismesso_comunicato_delivery=True e non appariranno più nei report successivi.
         PEC: usa la PEC del condominio, con fallback sulla PEC dell'amministratore.
         """
         try:
@@ -729,11 +750,14 @@ class ResPartner(models.Model):
             from io import BytesIO
             import base64
 
-            # active_test=False: include anche i condomini dismessi (active=False)
+            # Includi attivi + dismessi non ancora comunicati a Delivery
             condominii = self.with_context(active_test=False).search([
                 ('type', '=', 'condominio'),
                 ('parent_id', '!=', False),
                 ('parent_id.is_amministratore', '=', True),
+                '|',
+                ('active', '=', True),
+                ('dismesso_comunicato_delivery', '=', False),
             ])
             if not condominii:
                 _logger.info('BuildingPay: nessun condominio trovato.')
@@ -749,6 +773,7 @@ class ResPartner(models.Model):
             fill_ente       = PatternFill('solid', fgColor='1F4E79')   # blu scuro
             fill_pagopa     = PatternFill('solid', fgColor='2E75B6')   # blu chiaro
             fill_ids        = PatternFill('solid', fgColor='D6E4F0')   # azzurro tenue
+            fill_admin      = PatternFill('solid', fgColor='E2EFDA')   # verde tenue
             center          = Alignment(horizontal='center', vertical='center', wrap_text=True)
             thin_border     = Border(
                 left=Side(style='thin'), right=Side(style='thin'),
@@ -756,18 +781,21 @@ class ResPartner(models.Model):
             )
 
             # ── Riga 1: intestazioni di gruppo ────────────────
-            # A1:C1 → area identificativi (sfondo azzurro tenue, testo bold)
+            # A1:C1 → area identificativi (sfondo azzurro tenue)
             # D1:L1 → "Ente" mergiate (blu scuro)
             # M1    → "Piattaforma pagoPA" (blu chiaro)
-            # N1    → "Stato" (grigio)
+            # N1:O1 → "Dati Amministratore" (verde tenue)
+            # P1    → "Stato" (grigio)
             fill_stato = PatternFill('solid', fgColor='E8E8E8')  # grigio chiaro
 
             ws.merge_cells('A1:C1')
             ws.merge_cells('D1:L1')
+            ws.merge_cells('N1:O1')
             ws['A1'] = 'Identificativi'
             ws['D1'] = 'Ente'
             ws['M1'] = 'Piattaforma pagoPA'
-            ws['N1'] = 'Stato'
+            ws['N1'] = 'Dati Amministratore'
+            ws['P1'] = 'Stato'
 
             for col_letter in ('A', 'B', 'C'):
                 c = ws[col_letter + '1']
@@ -786,7 +814,13 @@ class ResPartner(models.Model):
             c.font = white_bold_font
             c.alignment = center
             c.border = thin_border
-            c = ws['N1']
+            for col_letter in ('N', 'O'):
+                c = ws[col_letter + '1']
+                c.fill = fill_admin
+                c.font = bold_font
+                c.alignment = center
+                c.border = thin_border
+            c = ws['P1']
             c.fill = fill_stato
             c.font = bold_font
             c.alignment = center
@@ -809,7 +843,9 @@ class ResPartner(models.Model):
                 'CAP',                             # K
                 'Codice Istat',                    # L
                 'IBAN',                            # M
-                'Stato',                           # N
+                'Applicativo',                     # N
+                'Sistema di Pagamento',            # O
+                'Stato',                           # P
             ]
             for col_idx, header in enumerate(col2_headers, 1):
                 c = ws.cell(row=2, column=col_idx, value=header)
@@ -819,7 +855,7 @@ class ResPartner(models.Model):
             ws.row_dimensions[2].height = 30
 
             # ── Larghezze colonne ─────────────────────────────
-            col_widths = [30, 30, 30, 30, 30, 18, 18, 36, 22, 12, 8, 14, 32, 12]
+            col_widths = [30, 30, 30, 30, 30, 18, 18, 36, 22, 12, 8, 14, 32, 24, 20, 12]
             for col_idx, width in enumerate(col_widths, 1):
                 ws.column_dimensions[get_column_letter(col_idx)].width = width
 
@@ -859,7 +895,9 @@ class ResPartner(models.Model):
                     condo.zip or '',                                         # K
                     condo.codice_istat or '',                                # L
                     bank.acc_number if bank else '',                         # M
-                    stato,                                                   # N
+                    admin.applicativo or '',                                 # N
+                    admin.sistema_pagamento or '',                           # O
+                    stato,                                                   # P
                 ]
                 for col_idx, value in enumerate(row_data, 1):
                     c = ws.cell(row=row_idx, column=col_idx, value=value)
@@ -897,5 +935,13 @@ class ResPartner(models.Model):
                                      '.spreadsheetml.sheet'),
                     })],
                 }).send()
+
+                # Marca i dismessi inclusi nel report: non verranno più inviati
+                dismessi = condominii.filtered(lambda c: not c.active)
+                if dismessi:
+                    dismessi.sudo().write({'dismesso_comunicato_delivery': True})
+                    _logger.info(
+                        'BuildingPay: %d condominio/i dismesso/i marcato/i come '
+                        'già comunicati a Delivery.', len(dismessi))
         except Exception as e:
             _logger.error('BuildingPay: errore report Dati Enti Aggregati: %s', e)

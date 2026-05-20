@@ -10,6 +10,30 @@ from odoo.addons.base_iban.models.res_partner_bank import validate_iban
 _logger = logging.getLogger(__name__)
 
 
+def _normalize_vat_prefix(env, vat, country_id_val):
+    """Aggiunge il prefisso IT alla P.IVA se il paese è Italia e il prefisso manca.
+    Un prefisso è considerato già presente se i primi due caratteri sono entrambe lettere
+    (es. 'IT', 'DE', 'FR', …). In quel caso il valore non viene modificato.
+    Per paesi diversi dall'Italia il valore viene restituito invariato.
+    Restituisce stringa vuota se vat è vuoto/None.
+    """
+    if not vat:
+        return ''
+    vat = vat.strip().upper()
+    # Se i primi due caratteri sono già due lettere il prefisso paese è già presente
+    if len(vat) >= 2 and vat[0].isalpha() and vat[1].isalpha():
+        return vat
+    if not country_id_val:
+        return vat
+    try:
+        country = env['res.country'].sudo().browse(int(country_id_val))
+        if country.exists() and country.code == 'IT':
+            vat = 'IT' + vat
+    except (ValueError, TypeError):
+        pass
+    return vat
+
+
 class BuildingPaySignup(AuthSignupHome):
     """
     Estende il controller di registrazione standard di Odoo per:
@@ -130,6 +154,12 @@ class BuildingPaySignup(AuthSignupHome):
                 'Registrazione non autorizzata: codice referrer mancante.'
             )}
             return request.render('BuildingPay_onboarding_v15.signup_form', qcontext)
+
+        # ------------------------------------------------------------------
+        # Intercept intent=info: crea un lead CRM invece di registrare
+        # ------------------------------------------------------------------
+        if params.get('intent') == 'info':
+            return self._handle_info_request(params, referrer_code_post, qcontext)
 
         # ------------------------------------------------------------------
         # Validazione campi obbligatori
@@ -281,6 +311,14 @@ class BuildingPaySignup(AuthSignupHome):
                 'is_amministratore_validato': False,
             })
 
+            # company_type: 'person' o 'company' dal radio button del form
+            company_type = params.get('company_type', '').strip()
+            if company_type in ('person', 'company'):
+                try:
+                    partner.sudo().write({'company_type': company_type})
+                except Exception as e:
+                    _logger.warning('BuildingPay signup – errore salvataggio company_type: %s', e)
+
             # --------------------------------------------------------------
             # Step 3b: Privacy accepted (write separato con proprio try/except)
             # --------------------------------------------------------------
@@ -389,11 +427,13 @@ class BuildingPaySignup(AuthSignupHome):
             # impedisca di salvare i dati anagrafici
             # --------------------------------------------------------------
             if params.get('vat', '').strip():
+                vat_normalized = _normalize_vat_prefix(
+                    request.env, params['vat'].strip(), params.get('country_id'))
                 try:
-                    partner.sudo().write({'vat': params['vat'].strip()})
+                    partner.sudo().write({'vat': vat_normalized})
                 except Exception as e:
                     _logger.warning('BuildingPay signup – P.IVA non valida (%s): %s',
-                                    params.get('vat'), e)
+                                    vat_normalized, e)
 
             # --------------------------------------------------------------
             # Step 6: Paese e provincia
@@ -483,6 +523,18 @@ class BuildingPaySignup(AuthSignupHome):
 
             # Attività di controllo dati nuovo amministratore
             self._create_new_admin_activity(partner)
+
+            # Lead CRM per tracciare la registrazione (stesso flusso del form informazioni)
+            try:
+                self._create_buildingpay_lead(
+                    name=partner.name or params.get('name', '').strip(),
+                    email=login,
+                    phone=params.get('phone', '').strip(),
+                    referrer_code=referrer_code_local,
+                    partner=partner,
+                )
+            except Exception as e:
+                _logger.warning('BuildingPay signup – errore creazione lead CRM: %s', e)
 
             _logger.info('BuildingPay: nuovo amministratore registrato: %s (%s)',
                          partner.name, partner.email)
@@ -588,6 +640,140 @@ class BuildingPaySignup(AuthSignupHome):
         except Exception as e:
             _logger.warning(
                 'BuildingPay: errore creazione attività nuovo admin: %s', e)
+
+    def _handle_info_request(self, params, referrer_code, qcontext):
+        """
+        Gestisce la richiesta di informazioni (intent=info).
+        Valida nome e email, crea un lead CRM e reindirizza con info_sent=1.
+        """
+        name = params.get('info_name', '').strip()
+        email = params.get('info_email', '').strip()
+        phone = params.get('info_phone', '').strip()
+
+        errors = {}
+        if not name:
+            errors['info_name'] = _('Campo obbligatorio')
+        if not email:
+            errors['info_email'] = _('Campo obbligatorio')
+
+        if errors:
+            qcontext.update({
+                'error': errors,
+                'form_data': params,
+                'intent_info_active': True,
+            })
+            if 'banks' not in qcontext:
+                qcontext['banks'] = request.env['res.bank'].sudo().search([], order='name')
+            return request.render('BuildingPay_onboarding_v15.signup_form', qcontext)
+
+        try:
+            self._create_buildingpay_lead(name, email, phone, referrer_code)
+        except Exception as e:
+            _logger.error('BuildingPay info request – errore creazione lead: %s', e)
+
+        redirect_url = '/web/signup?referrer=%s&info_sent=1' % (referrer_code or '')
+        return request.redirect(redirect_url)
+
+    def _create_buildingpay_lead(self, name, email, phone, referrer_code, partner=None):
+        """Crea un lead CRM BuildingPay. Se partner è fornito, lo collega al lead."""
+        env = request.env
+
+        # Trova o crea il tag CRM "BuildingPay"
+        tag = env['crm.tag'].sudo().search([('name', '=', 'BuildingPay')], limit=1)
+        if not tag:
+            tag = env['crm.tag'].sudo().create({'name': 'BuildingPay'})
+
+        # Determina il salesperson:
+        # 1. user_id del partner referrer (se configurato)
+        # 2. default_salesperson_id dalla config BuildingPay
+        user_id = False
+        referrer_partner = False
+        if referrer_code:
+            referrer_partner = env['res.partner'].sudo().search([
+                ('referrer_code', '=', referrer_code),
+            ], limit=1)
+            if referrer_partner and referrer_partner.user_id:
+                user_id = referrer_partner.user_id.id
+
+        if not user_id:
+            config = env['buildingpay_v36.config'].sudo().get_config_for_website()
+            if config and config.default_salesperson_id:
+                user_id = config.default_salesperson_id.id
+
+        lead_vals = {
+            'name': 'BuildingPay - Richiesta informazioni',
+            'contact_name': name,
+            'email_from': email,
+            'tag_ids': [(4, tag.id)],
+            'type': 'lead',
+        }
+        if phone:
+            lead_vals['phone'] = phone
+        if user_id:
+            lead_vals['user_id'] = user_id
+        if referrer_partner:
+            lead_vals['referrer_id'] = referrer_partner.id
+        if partner:
+            lead_vals['partner_id'] = partner.id
+
+        lead = env['crm.lead'].sudo().create(lead_vals)
+        _logger.info(
+            'BuildingPay: lead CRM creato (id=%s) per richiesta informazioni da %s',
+            lead.id, email)
+
+        # Crea un'attività To Do per ogni assegnatario configurato (fino a 3)
+        self._create_info_lead_activities(lead, name, email, phone)
+
+        return lead
+
+    def _create_info_lead_activities(self, lead, name, email, phone):
+        """
+        Crea un'attività To Do su crm.lead per ogni assegnatario configurato.
+        Scadenza: oggi + activity_info_lead_days (default 2).
+        """
+        from datetime import date, timedelta
+        try:
+            config = request.env['buildingpay_v36.config'].sudo().get_config_for_website()
+            if not config:
+                return
+
+            responsabili = [
+                config.activity_info_lead_responsible_1_id,
+                config.activity_info_lead_responsible_2_id,
+                config.activity_info_lead_responsible_3_id,
+            ]
+            responsabili = [r for r in responsabili if r]
+            if not responsabili:
+                return
+
+            days = config.activity_info_lead_days if config.activity_info_lead_days and config.activity_info_lead_days > 0 else 2
+            deadline = date.today() + timedelta(days=days)
+
+            activity_type = request.env.ref(
+                'mail.mail_activity_data_todo', raise_if_not_found=False)
+
+            summary = _('Lead BuildingPay - richiesta Informazioni')
+            phone_part = ', telefono %s' % phone if phone else ''
+            note = _(
+                'Contattare %s, email %s%s per fornire informazioni su BuildingPay.'
+            ) % (name, email, phone_part)
+
+            for user in responsabili:
+                lead.sudo().activity_schedule(
+                    activity_type_id=activity_type.id if activity_type else False,
+                    summary=summary,
+                    note=note,
+                    date_deadline=deadline,
+                    user_id=user.id,
+                )
+                _logger.info(
+                    'BuildingPay: attività lead informazioni creata su lead %s '
+                    '(assegnatario: %s, scadenza: %s)',
+                    lead.id, user.name, deadline,
+                )
+        except Exception as e:
+            _logger.warning(
+                'BuildingPay: errore creazione attività lead informazioni: %s', e)
 
     def _get_referral_url(self, partner):
         """Genera il link referral per un amministratore."""
