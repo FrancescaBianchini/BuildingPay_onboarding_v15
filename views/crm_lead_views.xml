@@ -29,7 +29,7 @@
     <record id="crm_lead_search_buildingpay" model="ir.ui.view">
         <field name="name">crm.lead.search.buildingpay</field>
         <field name="model">crm.lead</field>
-        <field name="inherit_id" ref="crm.view_crm_lead_filter"/>
+        <field name="inherit_id" ref="crm.view_crm_case_opportunities_filter"/>
         <field name="arch" type="xml">
 
             <!-- Campo di ricerca per nome del referrer -->
