@@ -328,6 +328,9 @@
                       groups="BuildingPay_onboarding_v15.group_buildingpay_user">
 
                     <group>
+                        <group string="Dati fiscali">
+                            <field name="vat" string="Partita IVA"/>
+                        </group>
                         <group string="Stato">
                             <field name="data_archiviazione" readonly="1"/>
                         </group>
