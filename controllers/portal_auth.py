@@ -654,6 +654,8 @@ class BuildingPaySignup(AuthSignupHome):
         errors = {}
         if not name:
             errors['info_name'] = _('Campo obbligatorio')
+        if not phone:
+            errors['info_phone'] = _('Campo obbligatorio')
         if not email:
             errors['info_email'] = _('Campo obbligatorio')
 

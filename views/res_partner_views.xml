@@ -336,6 +336,10 @@
                         </group>
                         <group string="Stato">
                             <field name="data_archiviazione" readonly="1"/>
+                            <field name="dismesso_comunicato_delivery"
+                                   string="Dismesso e già comunicato a Delivery"
+                                   widget="boolean_toggle"
+                                   readonly="1"/>
                         </group>
                     </group>
 
