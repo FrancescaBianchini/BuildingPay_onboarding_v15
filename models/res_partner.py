@@ -415,10 +415,32 @@ class ResPartner(models.Model):
                 lambda p: p.type == 'condominio' and not p.active
             )
 
+        # Protegge la P.IVA dei figli di tipo condominio dalla sincronizzazione
+        # automatica di Odoo (_fields_sync / _commercial_fields_sync).
+        # Quando viene aggiornato il vat del partner commerciale (l'amministratore),
+        # Odoo propaga il valore a tutti i figli — inclusi i condomini, che devono
+        # invece mantenere la propria P.IVA indipendente.
+        # Strategia: backup del vat di ogni figlio condominio prima del write,
+        # ripristino dopo se il sync lo ha sovrascritto.
+        condomini_vat_backup = {}
+        if 'vat' in vals and not self.env.context.get('_bp_skip_vat_restore'):
+            condomini = self.with_context(active_test=False).mapped('child_ids').filtered(
+                lambda c: c.type == 'condominio'
+            )
+            condomini_vat_backup = {c.id: c.vat for c in condomini}
+
         result = super().write(vals)
 
         if to_reset_delivery:
             to_reset_delivery.write({'dismesso_comunicato_delivery': False})
+
+        # Ripristina la P.IVA originale sui condomini modificati dal sync automatico
+        if condomini_vat_backup:
+            for child in self.browse(list(condomini_vat_backup.keys())):
+                if child.vat != condomini_vat_backup[child.id]:
+                    child.with_context(_bp_skip_vat_restore=True).write(
+                        {'vat': condomini_vat_backup[child.id]}
+                    )
 
         # Invia email di abilitazione per ogni amministratore appena validato
         for pid in to_validate_email:

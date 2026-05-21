@@ -12,3 +12,7 @@ class CrmLead(models.Model):
         index=True,
         help='Referrer BuildingPay che ha indirizzato questo contatto.',
     )
+    is_amministratore_buildingpay = fields.Boolean(
+        string='Amministratore registrato a BuildingPay',
+        default=False,
+    )

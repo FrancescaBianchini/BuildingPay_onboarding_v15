@@ -532,6 +532,7 @@ class BuildingPaySignup(AuthSignupHome):
                     phone=params.get('phone', '').strip(),
                     referrer_code=referrer_code_local,
                     partner=partner,
+                    is_registration=True,
                 )
             except Exception as e:
                 _logger.warning('BuildingPay signup – errore creazione lead CRM: %s', e)
@@ -674,7 +675,7 @@ class BuildingPaySignup(AuthSignupHome):
         redirect_url = '/web/signup?referrer=%s&info_sent=1' % (referrer_code or '')
         return request.redirect(redirect_url)
 
-    def _create_buildingpay_lead(self, name, email, phone, referrer_code, partner=None):
+    def _create_buildingpay_lead(self, name, email, phone, referrer_code, partner=None, is_registration=False):
         """Crea un lead CRM BuildingPay. Se partner è fornito, lo collega al lead."""
         env = request.env
 
@@ -700,12 +701,15 @@ class BuildingPaySignup(AuthSignupHome):
             if config and config.default_salesperson_id:
                 user_id = config.default_salesperson_id.id
 
+        lead_name = ('BuildingPay - amministratore registrato'
+                     if is_registration else 'BuildingPay - Richiesta informazioni')
         lead_vals = {
-            'name': 'BuildingPay - Richiesta informazioni',
+            'name': lead_name,
             'contact_name': name,
             'email_from': email,
             'tag_ids': [(4, tag.id)],
             'type': 'lead',
+            'is_amministratore_buildingpay': is_registration,
         }
         if phone:
             lead_vals['phone'] = phone

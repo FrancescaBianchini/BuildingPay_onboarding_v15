@@ -21,6 +21,11 @@
             <xpath expr="//field[@name='partner_id']" position="before">
                 <field name="referrer_id" string="Referrer BuildingPay"/>
             </xpath>
+            <xpath expr="//field[@name='referred']" position="after">
+                <field name="is_amministratore_buildingpay"
+                       string="Amministratore registrato a BuildingPay"
+                       widget="boolean_toggle"/>
+            </xpath>
         </field>
     </record>
 
