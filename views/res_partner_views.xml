@@ -276,6 +276,9 @@
                         <field name="is_referrer"
                                string="È un referrer"
                                widget="boolean_toggle"/>
+                        <field name="use_referrer_salesperson"
+                               string="Usare addetto vendite presente in anagrafica nel LEAD"
+                               widget="boolean_toggle"/>
                     </group>
 
                     <group invisible="not is_referrer">

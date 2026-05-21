@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 {
     'name': 'BuildingPay Onboarding',
-    'version': '17.0.6.0.1',
+    'version': '17.0.6.0.2',
     'category': 'Custom',
     'summary': 'BuildingPay v30 - Gestione Amministratori Condomini e Pagamenti PagoPa',
     'description': """

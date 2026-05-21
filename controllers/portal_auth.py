@@ -166,7 +166,7 @@ class BuildingPaySignup(AuthSignupHome):
         # ------------------------------------------------------------------
         errors = {}
 
-        required_fields = ['name', 'pec_mail', 'login',
+        required_fields = ['name', 'phone', 'pec_mail', 'login',
                            'password', 'confirm_password',
                            'street', 'city', 'zip', 'sistema_pagamento']
         for field in required_fields:
@@ -684,20 +684,24 @@ class BuildingPaySignup(AuthSignupHome):
         if not tag:
             tag = env['crm.tag'].sudo().create({'name': 'BuildingPay'})
 
-        # Determina il salesperson:
-        # 1. user_id del partner referrer (se configurato)
-        # 2. default_salesperson_id dalla config BuildingPay
+        # Determina il salesperson in base al flag use_referrer_salesperson del referrer:
+        # - TRUE: usa user_id del referrer se impostato, altrimenti default config
+        # - FALSE: usa sempre il default dalla config BuildingPay
         user_id = False
         referrer_partner = False
         if referrer_code:
             referrer_partner = env['res.partner'].sudo().search([
                 ('referrer_code', '=', referrer_code),
             ], limit=1)
-            if referrer_partner and referrer_partner.user_id:
-                user_id = referrer_partner.user_id.id
 
-        if not user_id:
-            config = env['buildingpay_v36.config'].sudo().get_config_for_website()
+        config = env['buildingpay_v36.config'].sudo().get_config_for_website()
+
+        if referrer_partner and referrer_partner.use_referrer_salesperson:
+            if referrer_partner.user_id:
+                user_id = referrer_partner.user_id.id
+            elif config and config.default_salesperson_id:
+                user_id = config.default_salesperson_id.id
+        else:
             if config and config.default_salesperson_id:
                 user_id = config.default_salesperson_id.id
 

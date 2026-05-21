@@ -305,11 +305,20 @@
 
                                     <div class="row">
                                         <div class="col-md-6 mb-3">
-                                            <label class="form-label" for="phone">Telefono</label>
+                                            <label class="form-label" for="phone">
+                                                Telefono <span class="text-danger">*</span>
+                                            </label>
                                             <input type="tel" name="phone" id="phone"
                                                    class="form-control"
+                                                   t-att-class="'is-invalid' if error and error.get('phone') else ''"
                                                    t-att-value="form_data.get('phone', '') if form_data else ''"
-                                                   placeholder="Es. +39 06 12345678"/>
+                                                   placeholder="Es. +39 06 12345678"
+                                                   required="required"/>
+                                            <t t-if="error and error.get('phone')">
+                                                <div class="invalid-feedback">
+                                                    <t t-esc="error.get('phone')"/>
+                                                </div>
+                                            </t>
                                         </div>
                                         <div class="col-md-6 mb-3">
                                             <label class="form-label" for="pec_mail">

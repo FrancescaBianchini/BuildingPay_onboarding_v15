@@ -110,6 +110,17 @@ class ResPartner(models.Model):
         tracking=True,
         help='Diventa TRUE automaticamente quando viene generato il Codice Referrer.',
     )
+    use_referrer_salesperson = fields.Boolean(
+        string='Usare addetto vendite presente in anagrafica nel LEAD',
+        default=False,
+        tracking=True,
+        help=(
+            'TRUE: l\'addetto vendite del LEAD generato da questo referrer è '
+            'l\'addetto vendite configurato in anagrafica (se impostato), '
+            'altrimenti si usa il default nelle Configurazioni BuildingPay.\n'
+            'FALSE: si usa sempre l\'addetto vendite di default delle Configurazioni BuildingPay.'
+        ),
+    )
     retrocessione_currency_id = fields.Many2one(
         comodel_name='res.currency',
         string='Valuta retrocessione',
