@@ -25,22 +25,6 @@
     </record>
 
     <!-- ══════════════════════════════════════════════════════
-         FORM VIEW (opportunità pipeline): stessa aggiunta.
-         In Odoo 17 EE la pipeline usa una view separata.
-         Se l'ID non esiste sull'ambiente, rimuovere questo record.
-    ══════════════════════════════════════════════════════ -->
-    <record id="crm_opportunity_form_buildingpay" model="ir.ui.view">
-        <field name="name">crm.opportunity.form.buildingpay</field>
-        <field name="model">crm.lead</field>
-        <field name="inherit_id" ref="crm.view_crm_case_form_view_oppor"/>
-        <field name="arch" type="xml">
-            <xpath expr="//field[@name='partner_id']" position="before">
-                <field name="referrer_id" string="Referrer BuildingPay"/>
-            </xpath>
-        </field>
-    </record>
-
-    <!-- ══════════════════════════════════════════════════════
          SEARCH VIEW: ricerca per nome referrer + group by referrer
     ══════════════════════════════════════════════════════ -->
     <record id="crm_lead_search_buildingpay" model="ir.ui.view">
