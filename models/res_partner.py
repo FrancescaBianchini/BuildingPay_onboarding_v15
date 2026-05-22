@@ -823,12 +823,13 @@ class ResPartner(models.Model):
 
             ws.merge_cells('A1:C1')
             ws.merge_cells('D1:L1')
-            ws.merge_cells('N1:O1')
+            ws.merge_cells('M1:N1')
+            ws.merge_cells('O1:P1')
             ws['A1'] = 'Identificativi'
             ws['D1'] = 'Ente'
             ws['M1'] = 'Piattaforma pagoPA'
-            ws['N1'] = 'Dati Amministratore'
-            ws['P1'] = 'Stato'
+            ws['O1'] = 'Dati Amministratore'
+            ws['Q1'] = 'Stato'
 
             for col_letter in ('A', 'B', 'C'):
                 c = ws[col_letter + '1']
@@ -842,18 +843,19 @@ class ResPartner(models.Model):
                 c.font = white_bold_font
                 c.alignment = center
                 c.border = thin_border
-            c = ws['M1']
-            c.fill = fill_pagopa
-            c.font = white_bold_font
-            c.alignment = center
-            c.border = thin_border
-            for col_letter in ('N', 'O'):
+            for col_letter in ('M', 'N'):
+                c = ws[col_letter + '1']
+                c.fill = fill_pagopa
+                c.font = white_bold_font
+                c.alignment = center
+                c.border = thin_border
+            for col_letter in ('O', 'P'):
                 c = ws[col_letter + '1']
                 c.fill = fill_admin
                 c.font = bold_font
                 c.alignment = center
                 c.border = thin_border
-            c = ws['P1']
+            c = ws['Q1']
             c.fill = fill_stato
             c.font = bold_font
             c.alignment = center
@@ -876,9 +878,10 @@ class ResPartner(models.Model):
                 'CAP',                             # K
                 'Codice Istat',                    # L
                 'IBAN',                            # M
-                'Applicativo',                     # N
-                'Sistema di Pagamento',            # O
-                'Stato',                           # P
+                'IBAN secondario',                 # N
+                'Applicativo',                     # O
+                'Sistema di Pagamento',            # P
+                'Stato',                           # Q
             ]
             for col_idx, header in enumerate(col2_headers, 1):
                 c = ws.cell(row=2, column=col_idx, value=header)
@@ -888,7 +891,7 @@ class ResPartner(models.Model):
             ws.row_dimensions[2].height = 30
 
             # ── Larghezze colonne ─────────────────────────────
-            col_widths = [30, 30, 30, 30, 30, 18, 18, 36, 22, 12, 8, 14, 32, 24, 20, 12]
+            col_widths = [30, 30, 30, 30, 30, 18, 18, 36, 22, 12, 8, 14, 32, 32, 24, 20, 12]
             for col_idx, width in enumerate(col_widths, 1):
                 ws.column_dimensions[get_column_letter(col_idx)].width = width
 
@@ -908,9 +911,11 @@ class ResPartner(models.Model):
 
             for row_idx, condo in enumerate(condominii, 3):
                 admin = condo.parent_id
-                bank  = self.with_context(active_test=False).env['res.partner.bank'].search([
+                banks = self.with_context(active_test=False).env['res.partner.bank'].search([
                     ('partner_id', '=', condo.id),
-                ], limit=1)
+                ], order='id asc', limit=2)
+                bank  = banks[0] if len(banks) >= 1 else self.env['res.partner.bank']
+                bank2 = banks[1] if len(banks) >= 2 else self.env['res.partner.bank']
                 # PEC: usa la PEC del condominio se presente, altrimenti quella dell'amministratore
                 pec_value = condo.pec_mail or admin.pec_mail or ''
                 stato = 'attivo' if condo.active else 'dismesso'
@@ -928,9 +933,10 @@ class ResPartner(models.Model):
                     condo.zip or '',                                         # K
                     condo.codice_istat or '',                                # L
                     bank.acc_number if bank else '',                         # M
-                    admin.applicativo or '',                                 # N
-                    admin.sistema_pagamento or '',                           # O
-                    stato,                                                   # P
+                    bank2.acc_number if bank2 else '',                       # N
+                    admin.applicativo or '',                                 # O
+                    admin.sistema_pagamento or '',                           # P
+                    stato,                                                   # Q
                 ]
                 for col_idx, value in enumerate(row_data, 1):
                     c = ws.cell(row=row_idx, column=col_idx, value=value)
