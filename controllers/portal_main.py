@@ -1209,6 +1209,7 @@ class BuildingPayPortal(CustomerPortal):
             'countries': countries,
             'banks': banks,
             'bank': None,
+            'bank2': None,
             'note_plain': '',
             'page_name': 'condomini_new',
             'mode': 'create',
@@ -1236,6 +1237,7 @@ class BuildingPayPortal(CustomerPortal):
                 'countries': countries,
                 'banks': banks,
                 'bank': None,
+                'bank2': None,
                 'note_plain': '',
                 'errors': errors,
                 'form_data': params,
@@ -1247,18 +1249,21 @@ class BuildingPayPortal(CustomerPortal):
             condominio_vals = self._prepare_condominio_vals(params, partner)
             condominio = request.env['res.partner'].sudo().create(condominio_vals)
 
-            # Salva IBAN e istituto bancario
-            iban = params.get('iban', '').strip()
-            banca_id_raw = params.get('banca_id', '').strip()
-            banca_id = int(banca_id_raw) if banca_id_raw else False
+            # Salva IBAN principale
+            iban = params.get('iban', '').replace(' ', '').upper().strip()
             if iban:
-                bank_vals = {
+                request.env['res.partner.bank'].sudo().create({
                     'partner_id': condominio.id,
                     'acc_number': iban,
-                }
-                if banca_id:
-                    bank_vals['bank_id'] = banca_id
-                request.env['res.partner.bank'].sudo().create(bank_vals)
+                })
+
+            # Salva IBAN secondario (se presente)
+            iban2 = params.get('iban2', '').replace(' ', '').upper().strip()
+            if iban2:
+                request.env['res.partner.bank'].sudo().create({
+                    'partner_id': condominio.id,
+                    'acc_number': iban2,
+                })
 
             # Attiva flag electronic invoice se codice destinatario presente
             if params.get('codice_destinatario'):
@@ -1280,10 +1285,12 @@ class BuildingPayPortal(CustomerPortal):
         if isinstance(condominio, type(request.redirect('/'))):
             return condominio
 
-        # Recupera IBAN dal conto bancario
-        bank = request.env['res.partner.bank'].sudo().search([
+        # Recupera i conti bancari del condominio (ordinati per id: primo = principale)
+        banks_list = request.env['res.partner.bank'].sudo().search([
             ('partner_id', '=', condominio.id),
-        ], limit=1)
+        ], order='id asc', limit=2)
+        bank = banks_list[0] if banks_list else None
+        bank2 = banks_list[1] if len(banks_list) > 1 else None
 
         countries = request.env['res.country'].sudo().search([])
         banks = request.env['res.bank'].sudo().search([], order='name')
@@ -1291,6 +1298,7 @@ class BuildingPayPortal(CustomerPortal):
             'partner': partner,
             'condominio': condominio,
             'bank': bank,
+            'bank2': bank2,
             'countries': countries,
             'banks': banks,
             'note_plain': self._html_to_text(condominio.sudo().comment),
@@ -1314,13 +1322,14 @@ class BuildingPayPortal(CustomerPortal):
         if errors:
             countries = request.env['res.country'].sudo().search([])
             banks = request.env['res.bank'].sudo().search([], order='name')
-            bank = request.env['res.partner.bank'].sudo().search([
+            existing_banks = request.env['res.partner.bank'].sudo().search([
                 ('partner_id', '=', condominio.id),
-            ], limit=1)
+            ], order='id asc', limit=2)
             return request.render('BuildingPay_onboarding_v15.portal_condominio_form', {
                 'partner': partner,
                 'condominio': condominio,
-                'bank': bank,
+                'bank': existing_banks[0] if existing_banks else None,
+                'bank2': existing_banks[1] if len(existing_banks) > 1 else None,
                 'countries': countries,
                 'banks': banks,
                 'note_plain': self._html_to_text(condominio.sudo().comment),
@@ -1337,24 +1346,37 @@ class BuildingPayPortal(CustomerPortal):
             condominio_vals.pop('type', None)
             condominio.sudo().write(condominio_vals)
 
-            # Aggiorna IBAN e istituto bancario
-            iban = params.get('iban', '').strip()
-            banca_id_raw = params.get('banca_id', '').strip()
-            banca_id = int(banca_id_raw) if banca_id_raw else False
-            existing_bank = request.env['res.partner.bank'].sudo().search([
+            # Carica i conti bancari esistenti (ordinati per id: primo = principale)
+            existing_banks = request.env['res.partner.bank'].sudo().search([
                 ('partner_id', '=', condominio.id),
-            ], limit=1)
+            ], order='id asc', limit=2)
+            existing_bank  = existing_banks[0] if existing_banks else None
+            existing_bank2 = existing_banks[1] if len(existing_banks) > 1 else None
+
+            # Aggiorna IBAN principale (obbligatorio)
+            iban = params.get('iban', '').replace(' ', '').upper().strip()
             if iban:
-                bank_vals = {'acc_number': iban}
-                if banca_id:
-                    bank_vals['bank_id'] = banca_id
                 if existing_bank:
-                    existing_bank.sudo().write(bank_vals)
+                    existing_bank.sudo().write({'acc_number': iban})
                 else:
-                    bank_vals['partner_id'] = condominio.id
-                    request.env['res.partner.bank'].sudo().create(bank_vals)
-            elif existing_bank and banca_id:
-                existing_bank.sudo().write({'bank_id': banca_id})
+                    request.env['res.partner.bank'].sudo().create({
+                        'partner_id': condominio.id,
+                        'acc_number': iban,
+                    })
+
+            # Aggiorna IBAN secondario (facoltativo)
+            iban2 = params.get('iban2', '').replace(' ', '').upper().strip()
+            if iban2:
+                if existing_bank2:
+                    existing_bank2.sudo().write({'acc_number': iban2})
+                else:
+                    request.env['res.partner.bank'].sudo().create({
+                        'partner_id': condominio.id,
+                        'acc_number': iban2,
+                    })
+            elif existing_bank2:
+                # L'utente ha svuotato il campo: rimuove il conto secondario
+                existing_bank2.sudo().unlink()
 
             # Aggiorna flag electronic invoice
             if params.get('codice_destinatario'):
@@ -1449,7 +1471,7 @@ class BuildingPayPortal(CustomerPortal):
                     'Se il condominio è già registrato, contatta l\'assistenza.'
                 ) % fiscalcode
 
-        # IBAN obbligatorio + validazione formale
+        # IBAN principale — obbligatorio + validazione formale
         iban = params.get('iban', '').replace(' ', '').upper().strip()
         if not iban:
             errors['iban'] = _('L\'IBAN è obbligatorio.')
@@ -1458,6 +1480,14 @@ class BuildingPayPortal(CustomerPortal):
                 validate_iban(iban)
             except Exception:
                 errors['iban'] = _('IBAN non valido. Verificare il codice inserito.')
+
+        # IBAN secondario — facoltativo, ma validato se presente
+        iban2 = params.get('iban2', '').replace(' ', '').upper().strip()
+        if iban2 and validate_iban:
+            try:
+                validate_iban(iban2)
+            except Exception:
+                errors['iban2'] = _('IBAN secondario non valido. Verificare il codice inserito.')
 
         return errors
 
