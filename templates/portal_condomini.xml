@@ -318,6 +318,8 @@
                                                 </div>
                                             </t>
                                         </div>
+                                    </div>
+                                    <div class="row">
                                         <div class="col-md-6 mb-3">
                                             <label for="condo_vat" class="form-label">
                                                 Partita IVA
@@ -349,52 +351,56 @@
                                     <h6 class="text-muted mt-4 mb-3">Dati bancari</h6>
 
                                     <!-- IBAN principale (obbligatorio) -->
-                                    <div class="mb-3">
-                                        <label for="condo_iban" class="form-label">
-                                            IBAN <span class="text-danger">*</span>
-                                        </label>
-                                        <div class="form-text mb-2">IBAN principale del condominio</div>
-                                        <input type="text"
-                                               id="condo_iban"
-                                               name="iban"
-                                               class="form-control"
-                                               t-att-class="'is-invalid' if errors and errors.get('iban') else ''"
-                                               t-att-value="form_data.get('iban', '') if form_data else (bank.acc_number if bank else '')"
-                                               placeholder="Es. IT60 X054 2811 1010 0000 0123 456"
-                                               maxlength="34"
-                                               autocomplete="off"
-                                               required="required"/>
-                                        <div id="bp_condo_iban_fb" class="bp-iban-feedback form-text mt-1"/>
-                                        <t t-if="errors and errors.get('iban')">
-                                            <div class="invalid-feedback d-block">
-                                                <i class="fa fa-exclamation-circle me-1"/>
-                                                <t t-esc="errors.get('iban')"/>
-                                            </div>
-                                        </t>
+                                    <div class="row">
+                                        <div class="col-md-6 mb-3">
+                                            <label for="condo_iban" class="form-label">
+                                                IBAN <span class="text-danger">*</span>
+                                            </label>
+                                            <div class="form-text mb-2">IBAN principale del condominio</div>
+                                            <input type="text"
+                                                   id="condo_iban"
+                                                   name="iban"
+                                                   class="form-control"
+                                                   t-att-class="'is-invalid' if errors and errors.get('iban') else ''"
+                                                   t-att-value="form_data.get('iban', '') if form_data else (bank.acc_number if bank else '')"
+                                                   placeholder="Es. IT60 X054 2811 1010 0000 0123 456"
+                                                   maxlength="34"
+                                                   autocomplete="off"
+                                                   required="required"/>
+                                            <div id="bp_condo_iban_fb" class="bp-iban-feedback form-text mt-1"/>
+                                            <t t-if="errors and errors.get('iban')">
+                                                <div class="invalid-feedback d-block">
+                                                    <i class="fa fa-exclamation-circle me-1"/>
+                                                    <t t-esc="errors.get('iban')"/>
+                                                </div>
+                                            </t>
+                                        </div>
                                     </div>
 
                                     <!-- IBAN secondario (facoltativo) -->
-                                    <div class="mb-3">
-                                        <label for="condo_iban2" class="form-label">
-                                            IBAN secondario
-                                        </label>
-                                        <div class="form-text mb-2">IBAN secondario, usato per gestione di spese non ordinarie</div>
-                                        <input type="text"
-                                               id="condo_iban2"
-                                               name="iban2"
-                                               class="form-control"
-                                               t-att-class="'is-invalid' if errors and errors.get('iban2') else ''"
-                                               t-att-value="form_data.get('iban2', '') if form_data else (bank2.acc_number if bank2 else '')"
-                                               placeholder="Es. IT60 X054 2811 1010 0000 0123 456"
-                                               maxlength="34"
-                                               autocomplete="off"/>
-                                        <div id="bp_condo_iban2_fb" class="bp-iban-feedback form-text mt-1"/>
-                                        <t t-if="errors and errors.get('iban2')">
-                                            <div class="invalid-feedback d-block">
-                                                <i class="fa fa-exclamation-circle me-1"/>
-                                                <t t-esc="errors.get('iban2')"/>
-                                            </div>
-                                        </t>
+                                    <div class="row">
+                                        <div class="col-md-6 mb-3">
+                                            <label for="condo_iban2" class="form-label">
+                                                IBAN secondario
+                                            </label>
+                                            <div class="form-text mb-2">IBAN secondario, usato per gestione di spese non ordinarie</div>
+                                            <input type="text"
+                                                   id="condo_iban2"
+                                                   name="iban2"
+                                                   class="form-control"
+                                                   t-att-class="'is-invalid' if errors and errors.get('iban2') else ''"
+                                                   t-att-value="form_data.get('iban2', '') if form_data else (bank2.acc_number if bank2 else '')"
+                                                   placeholder="Es. IT60 X054 2811 1010 0000 0123 456"
+                                                   maxlength="34"
+                                                   autocomplete="off"/>
+                                            <div id="bp_condo_iban2_fb" class="bp-iban-feedback form-text mt-1"/>
+                                            <t t-if="errors and errors.get('iban2')">
+                                                <div class="invalid-feedback d-block">
+                                                    <i class="fa fa-exclamation-circle me-1"/>
+                                                    <t t-esc="errors.get('iban2')"/>
+                                                </div>
+                                            </t>
+                                        </div>
                                     </div>
 
                                     <!-- Inizializzazione validatori IBAN -->
@@ -407,17 +413,19 @@
                                         });
                                     </script>
 
-                                    <div class="mb-3">
-                                        <label for="condo_sdi" class="form-label">
-                                            Codice Destinatario (SDI)
-                                        </label>
-                                        <input type="text"
-                                               id="condo_sdi"
-                                               name="codice_destinatario"
-                                               class="form-control"
-                                               maxlength="7"
-                                               t-att-value="form_data.get('codice_destinatario', '') if form_data else (condominio.codice_destinatario if condominio else '')"
-                                               placeholder="Es. 0000000"/>
+                                    <div class="row">
+                                        <div class="col-md-6 mb-3">
+                                            <label for="condo_sdi" class="form-label">
+                                                Codice Destinatario (SDI)
+                                            </label>
+                                            <input type="text"
+                                                   id="condo_sdi"
+                                                   name="codice_destinatario"
+                                                   class="form-control"
+                                                   maxlength="7"
+                                                   t-att-value="form_data.get('codice_destinatario', '') if form_data else (condominio.codice_destinatario if condominio else '')"
+                                                   placeholder="Es. 0000000"/>
+                                        </div>
                                     </div>
 
                                     <!-- Note -->
