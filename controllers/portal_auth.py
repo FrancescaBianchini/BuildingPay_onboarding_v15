@@ -149,11 +149,8 @@ class BuildingPaySignup(AuthSignupHome):
             or qcontext.get('referrer_code', '')
             or request.session.get('buildingpay_referrer_code', '')
         )
-        if not referrer_code_post:
-            qcontext['error'] = {'general': _(
-                'Registrazione non autorizzata: codice referrer mancante.'
-            )}
-            return request.render('BuildingPay_onboarding_v15.signup_form', qcontext)
+        # Il codice referrer è facoltativo: se assente la registrazione prosegue
+        # senza collegare un referrer (il LEAD e il contatto non avranno referrer_id).
 
         # ------------------------------------------------------------------
         # Intercept intent=info: crea un lead CRM invece di registrare
@@ -674,7 +671,10 @@ class BuildingPaySignup(AuthSignupHome):
         except Exception as e:
             _logger.error('BuildingPay info request – errore creazione lead: %s', e)
 
-        redirect_url = '/web/signup?referrer=%s&info_sent=1' % (referrer_code or '')
+        if referrer_code:
+            redirect_url = '/web/signup?referrer=%s&info_sent=1' % referrer_code
+        else:
+            redirect_url = '/web/signup?info_sent=1'
         return request.redirect(redirect_url)
 
     def _create_buildingpay_lead(self, name, email, phone, referrer_code, partner=None, is_registration=False):
@@ -767,6 +767,31 @@ class BuildingPaySignup(AuthSignupHome):
             note = _(
                 'Contattare %s, email %s%s per fornire informazioni su BuildingPay.'
             ) % (name, email, phone_part)
+
+            # Aggiunge link di iscrizione SOLO per richieste informazioni (non per registrazioni)
+            if not lead.is_amministratore_buildingpay:
+                try:
+                    bp_website = request.env['website'].sudo().search([
+                        ('name', 'ilike', 'BuildingPay'),
+                    ], limit=1)
+                    if bp_website and bp_website.domain:
+                        domain = bp_website.domain.strip().rstrip('/')
+                        if not domain.startswith('http'):
+                            domain = 'https://' + domain
+                    else:
+                        domain = request.env['ir.config_parameter'].sudo().get_param(
+                            'web.base.url', '').rstrip('/')
+                    signup_url = domain + '/web/signup'
+                    if lead.referrer_id and lead.referrer_id.referrer_code:
+                        signup_url += '?referrer=%s' % lead.referrer_id.referrer_code
+                    note += (
+                        '\nDopo aver effettuato le proprie attività di sales, '
+                        'invitare l\'amministratore a registrarsi a BuildingPay '
+                        'tramite il link: %s %s'
+                    ) % (domain, signup_url)
+                except Exception as e_link:
+                    _logger.warning(
+                        'BuildingPay: errore generazione link signup per attività: %s', e_link)
 
             for user in responsabili:
                 lead.sudo().activity_schedule(

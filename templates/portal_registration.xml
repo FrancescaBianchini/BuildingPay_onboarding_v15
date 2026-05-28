@@ -16,29 +16,6 @@
                 <div class="row justify-content-center">
                     <div class="col-md-8">
 
-                        <!-- Caso 1: nessun codice referrer nell'URL -->
-                        <t t-if="not referrer_code">
-                            <div class="card border-danger">
-                                <div class="card-header bg-danger text-white">
-                                    <i class="fa fa-ban me-2"/>
-                                    <strong>Registrazione non autorizzata</strong>
-                                </div>
-                                <div class="card-body text-center py-5">
-                                    <i class="fa fa-lock fa-4x text-danger mb-3 d-block"/>
-                                    <h5>Non sei autorizzato a registrarti senza un codice referrer.</h5>
-                                    <p class="text-muted mt-3">
-                                        Per iscriverti a BuildingPay devi ricevere un link di invito
-                                        dal tuo referrer di riferimento.<br/>
-                                        Contattalo per ottenere il link personalizzato.
-                                    </p>
-                                    <a href="/web/login" class="btn btn-outline-secondary mt-2">
-                                        <i class="fa fa-arrow-left me-2"/>
-                                        Torna al login
-                                    </a>
-                                </div>
-                            </div>
-                        </t>
-
                         <!-- Caso 2: codice referrer presente ma non valido (lunghezza errata o non trovato) -->
                         <t t-if="referrer_code and referrer_code_invalid">
                             <div class="card border-warning">
@@ -72,8 +49,8 @@
                             </div>
                         </t>
 
-                        <!-- Caso 3: codice referrer valido → mostra il form -->
-                        <t t-if="referrer_code and not referrer_code_invalid">
+                        <!-- Caso 3: codice referrer valido OPPURE assente → mostra il form -->
+                        <t t-if="not referrer_code_invalid">
 
                         <!-- Messaggio: richiesta informazioni inviata con successo -->
                         <t t-if="request.params.get('info_sent') == '1'">
@@ -685,7 +662,7 @@
                             </div><!-- /card-body -->
                         </div><!-- /card -->
 
-                        </t><!-- /t-if referrer_code valido -->
+                        </t><!-- /t-if form disponibile -->
 
                     </div><!-- /col-md-8 -->
                 </div><!-- /row -->
