@@ -327,31 +327,32 @@ class ResPartner(models.Model):
     bp_costo_email = fields.Monetary(
         string='Costo email',
         currency_field='company_currency_id',
-        default=0.0,
+        default=lambda self: self._get_bp_config().costo_email,
         help='Costo per email inviata. Default: valore dalle Configurazioni BuildingPay.',
     )
     bp_costo_rendicontazione = fields.Monetary(
         string='Costo rendicontazione',
         currency_field='company_currency_id',
-        default=0.0,
+        default=lambda self: self._get_bp_config().costo_rendicontazione,
         help='Costo di rendicontazione. Default: valore dalle Configurazioni BuildingPay.',
     )
     bp_costo_whatsapp = fields.Monetary(
         string='Costo WhatsApp',
         currency_field='company_currency_id',
-        default=0.0,
+        default=lambda self: self._get_bp_config().costo_whatsapp,
         help='Costo per messaggio WhatsApp. Default: valore dalle Configurazioni BuildingPay.',
     )
     bp_quota_fissa = fields.Monetary(
         string='Quota fissa',
         currency_field='company_currency_id',
-        default=0.0,
+        default=lambda self: self._get_bp_config().quota_fissa,
         help='Quota fissa mensile. Default: valore dalle Configurazioni BuildingPay.',
     )
     bp_quota_fissa_sdd_product_id = fields.Many2one(
         comodel_name='product.product',
         string='Quota fissa SDD',
         domain="[('type', '=', 'service'), ('categ_id.name', '=', 'BuildingPay')]",
+        default=lambda self: self._get_bp_config().quota_fissa_sdd_product_id,
         help='Prodotto SDD per questo amministratore. Default: prodotto dalle Configurazioni BuildingPay.',
     )
 
@@ -624,6 +625,36 @@ class ResPartner(models.Model):
     def _generate_referrer_code(self):
         """Genera un codice alfanumerico casuale di 8 caratteri (maiuscolo)."""
         return uuid.uuid4().hex[:8].upper()
+
+    @api.model
+    def _get_bp_config(self):
+        """Restituisce la configurazione BuildingPay del sito web il cui nome
+        contiene 'BuildingPay' (case-insensitive). Fallback alla prima config
+        disponibile se non trovata."""
+        bp_website = self.env['website'].sudo().search(
+            [('name', 'ilike', 'BuildingPay')], limit=1)
+        if bp_website:
+            config = self.env['buildingpay_v36.config'].sudo().search(
+                [('website_id', '=', bp_website.id)], limit=1)
+            if config:
+                return config
+        return self.env['buildingpay_v36.config'].sudo().search([], limit=1)
+
+    def action_reset_bp_defaults_from_config(self):
+        """Reimposta le Condizioni Economiche con i valori di default dalla config BuildingPay.
+        Funziona su uno o più record (form singolo e azione massiva sulla lista).
+        """
+        config = self._get_bp_config()
+        if not config:
+            raise UserError(_('Nessuna configurazione BuildingPay trovata.'))
+        self.write({
+            'bp_costo_email': config.costo_email,
+            'bp_costo_rendicontazione': config.costo_rendicontazione,
+            'bp_costo_whatsapp': config.costo_whatsapp,
+            'bp_quota_fissa': config.quota_fissa,
+            'bp_quota_fissa_sdd_product_id': config.quota_fissa_sdd_product_id.id or False,
+        })
+        return False
 
     # -------------------------------------------------------
     # Upload: Accordo Retrocessioni
