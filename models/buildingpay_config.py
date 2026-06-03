@@ -161,6 +161,44 @@ class BuildingPayConfig(models.Model):
     )
 
     # -------------------------------------------------------
+    # Costi servizi (valori di default per gli amministratori)
+    # -------------------------------------------------------
+    currency_id = fields.Many2one(
+        comodel_name='res.currency',
+        string='Valuta',
+        related='website_id.company_id.currency_id',
+        readonly=True,
+        store=False,
+    )
+    costo_email = fields.Monetary(
+        string='Costo email',
+        currency_field='currency_id',
+        default=0.0,
+        help='Costo per email inviata. Valore di default per gli amministratori.',
+    )
+    costo_rendicontazione = fields.Monetary(
+        string='Costo rendicontazione',
+        currency_field='currency_id',
+        default=0.0,
+    )
+    costo_whatsapp = fields.Monetary(
+        string='Costo WhatsApp',
+        currency_field='currency_id',
+        default=0.0,
+    )
+    quota_fissa = fields.Monetary(
+        string='Quota fissa',
+        currency_field='currency_id',
+        default=0.0,
+    )
+    quota_fissa_sdd_product_id = fields.Many2one(
+        comodel_name='product.product',
+        string='Quota fissa SDD',
+        domain="[('type', '=', 'service'), ('categ_id.name', '=', 'BuildingPay')]",
+        help='Prodotto di tipo servizio con categoria BuildingPay da usare come quota fissa SDD di default.',
+    )
+
+    # -------------------------------------------------------
     # CRM: addetto vendite di default per le richieste informazioni
     # -------------------------------------------------------
     default_salesperson_id = fields.Many2one(

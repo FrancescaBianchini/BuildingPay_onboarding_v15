@@ -320,6 +320,42 @@ class ResPartner(models.Model):
     )
 
     # -------------------------------------------------------
+    # Condizioni economiche per-amministratore
+    # Valori di default letti dalla configurazione BuildingPay,
+    # modificabili individualmente per ogni amministratore.
+    # -------------------------------------------------------
+    bp_costo_email = fields.Monetary(
+        string='Costo email',
+        currency_field='company_currency_id',
+        default=0.0,
+        help='Costo per email inviata. Default: valore dalle Configurazioni BuildingPay.',
+    )
+    bp_costo_rendicontazione = fields.Monetary(
+        string='Costo rendicontazione',
+        currency_field='company_currency_id',
+        default=0.0,
+        help='Costo di rendicontazione. Default: valore dalle Configurazioni BuildingPay.',
+    )
+    bp_costo_whatsapp = fields.Monetary(
+        string='Costo WhatsApp',
+        currency_field='company_currency_id',
+        default=0.0,
+        help='Costo per messaggio WhatsApp. Default: valore dalle Configurazioni BuildingPay.',
+    )
+    bp_quota_fissa = fields.Monetary(
+        string='Quota fissa',
+        currency_field='company_currency_id',
+        default=0.0,
+        help='Quota fissa mensile. Default: valore dalle Configurazioni BuildingPay.',
+    )
+    bp_quota_fissa_sdd_product_id = fields.Many2one(
+        comodel_name='product.product',
+        string='Quota fissa SDD',
+        domain="[('type', '=', 'service'), ('categ_id.name', '=', 'BuildingPay')]",
+        help='Prodotto SDD per questo amministratore. Default: prodotto dalle Configurazioni BuildingPay.',
+    )
+
+    # -------------------------------------------------------
     # Condomini figli (indirizzi di tipo condominio)
     # -------------------------------------------------------
     condominio_ids = fields.One2many(

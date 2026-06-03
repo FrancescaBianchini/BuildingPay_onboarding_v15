@@ -787,8 +787,8 @@ class BuildingPaySignup(AuthSignupHome):
                     note += (
                         '\nDopo aver effettuato le proprie attività di sales, '
                         'invitare l\'amministratore a registrarsi a BuildingPay '
-                        'tramite il link: %s %s'
-                    ) % (domain, signup_url)
+                        'tramite il link: %s'
+                    ) % signup_url
                 except Exception as e_link:
                     _logger.warning(
                         'BuildingPay: errore generazione link signup per attività: %s', e_link)

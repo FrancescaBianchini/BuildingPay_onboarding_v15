@@ -142,6 +142,25 @@
                                 <field name="sistema_pagamento" string="Sistemi di pagamento usati"/>
                             </group>
 
+                            <separator string="Condizioni Economiche"/>
+                            <p class="text-muted small">
+                                I valori di default sono quelli configurati nelle Configurazioni BuildingPay.
+                                Modificare qui per personalizzare le condizioni di questo amministratore.
+                            </p>
+                            <group>
+                                <group string="Costi per transazione">
+                                    <field name="bp_costo_email" string="Costo email"/>
+                                    <field name="bp_costo_rendicontazione" string="Costo rendicontazione"/>
+                                    <field name="bp_costo_whatsapp" string="Costo WhatsApp"/>
+                                    <field name="bp_quota_fissa" string="Quota fissa"/>
+                                </group>
+                                <group string="Prodotto SDD">
+                                    <field name="bp_quota_fissa_sdd_product_id"
+                                           string="Quota fissa SDD"
+                                           options="{'no_create': True}"/>
+                                </group>
+                            </group>
+
                             <separator string="Stato contratti"/>
                             <group>
                                 <group string="Accordo Amministratore">
