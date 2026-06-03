@@ -165,6 +165,8 @@ class BuildingPayPortal(CustomerPortal):
             'page_name': 'contratti',
             'success': kw.get('success'),
             'error': kw.get('error'),
+            'accordo_retrocessioni_forzato': partner.sudo().accordo_retrocessioni_forzato,
+            'accordo_condomini_forzato': partner.sudo().accordo_condomini_forzato,
         }
         return request.render('BuildingPay_onboarding_v15.portal_contratti', values)
 

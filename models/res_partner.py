@@ -194,6 +194,16 @@ class ResPartner(models.Model):
         string='Data caricamento accordo retrocessioni',
         readonly=True,
     )
+    accordo_retrocessioni_forzato = fields.Boolean(
+        string='Accordo Amministratore: caricamento forzato',
+        default=False,
+        tracking=True,
+        help=(
+            'Se attivo, il backoffice ha gestito il caricamento in deroga al processo standard. '
+            'Il portale non mostrerà più questo documento tra quelli da scaricare/caricare. '
+            'Il cambio di stato viene registrato automaticamente nel log con data e utente.'
+        ),
+    )
 
     # -------------------------------------------------------
     # CONTRATTO 2: Accordo Condomini Aggregati ED
@@ -218,6 +228,16 @@ class ResPartner(models.Model):
     accordo_condomini_upload_date = fields.Datetime(
         string='Data caricamento accordo condomini',
         readonly=True,
+    )
+    accordo_condomini_forzato = fields.Boolean(
+        string='Accordo Condomini Aggregati: caricamento forzato',
+        default=False,
+        tracking=True,
+        help=(
+            'Se attivo, il backoffice ha gestito il caricamento in deroga al processo standard. '
+            'Il portale non mostrerà più questo documento tra quelli da scaricare/caricare. '
+            'Il cambio di stato viene registrato automaticamente nel log con data e utente.'
+        ),
     )
 
     # -------------------------------------------------------
@@ -451,6 +471,27 @@ class ResPartner(models.Model):
                 vals['accordo_condomini_pes_upload_date'] = False
                 vals['accordo_condomini_pes_upload_user_id'] = False
 
+        # Forzatura ON → imposta _ed = True.
+        # Forzatura OFF → raccoglie i record da resettare (solo se nessun file
+        # caricato dall'amministratore: non si vuole cancellare un upload reale).
+        # tracking=True registra nel chatter data, ora e utente per entrambi i movimenti.
+        to_reset_retrocessioni_ed = self.env['res.partner']
+        to_reset_condomini_ed = self.env['res.partner']
+        if vals.get('accordo_retrocessioni_forzato') is True:
+            vals = dict(vals)
+            vals['accordo_retrocessioni_ed'] = True
+        elif vals.get('accordo_retrocessioni_forzato') is False:
+            to_reset_retrocessioni_ed = self.filtered(
+                lambda p: p.accordo_retrocessioni_forzato and not p.accordo_retrocessioni_file
+            )
+        if vals.get('accordo_condomini_forzato') is True:
+            vals = dict(vals)
+            vals['accordo_condomini_aggregati_ed'] = True
+        elif vals.get('accordo_condomini_forzato') is False:
+            to_reset_condomini_ed = self.filtered(
+                lambda p: p.accordo_condomini_forzato and not p.accordo_condomini_file
+            )
+
         # Rileva la transizione is_amministratore_validato False → True
         # PRIMA di super().write() per confrontare con il valore attuale
         to_validate_email = []
@@ -482,6 +523,12 @@ class ResPartner(models.Model):
             condomini_vat_backup = {c.id: c.vat for c in condomini}
 
         result = super().write(vals)
+
+        # Reimposta _ed quando la forzatura viene disattivata (senza documento reale caricato)
+        if to_reset_retrocessioni_ed:
+            to_reset_retrocessioni_ed.write({'accordo_retrocessioni_ed': False})
+        if to_reset_condomini_ed:
+            to_reset_condomini_ed.write({'accordo_condomini_aggregati_ed': False})
 
         if to_reset_delivery:
             to_reset_delivery.write({'dismesso_comunicato_delivery': False})

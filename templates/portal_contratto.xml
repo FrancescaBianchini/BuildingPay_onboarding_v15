@@ -66,7 +66,7 @@
                 ====================================================== -->
                 <t t-set="has_accordo_admin"
                    t-value="not referrer or referrer.contratto_retrocessione_standard or referrer.contratto_retrocessione_custom_file"/>
-                <div class="card mb-4" t-if="has_accordo_admin">
+                <div class="card mb-4" t-if="has_accordo_admin and not accordo_retrocessioni_forzato">
                     <div class="card-header bg-primary text-white">
                         <h5 class="mb-0">
                             <i class="fa fa-file-text-o me-2"/>
@@ -253,6 +253,7 @@
                                 attiv<t t-if="condomini_count == 1">o</t><t t-else="">i</t>.
                             </div>
 
+                            <t t-if="not accordo_condomini_forzato">
                             <div class="row">
                                 <!-- Download pre-compilato con Allegato A -->
                                 <div class="col-md-6 mb-3">
@@ -344,6 +345,14 @@
                                     </form>
                                 </div>
                             </div>
+                            </t>
+                            <t t-else="">
+                                <div class="alert alert-success">
+                                    <i class="fa fa-check-circle me-2"/>
+                                    Il documento è stato elaborato dal nostro ufficio.
+                                    Non è richiesta alcuna azione da parte tua.
+                                </div>
+                            </t>
                         </t>
                     </div>
                 </div>

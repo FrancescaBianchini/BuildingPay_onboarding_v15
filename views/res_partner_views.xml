@@ -188,6 +188,11 @@
                                     <field name="accordo_retrocessioni_upload_date"
                                            readonly="1"
                                            invisible="not accordo_retrocessioni_ed"/>
+                                    <!-- Forza il caricamento dal backoffice (solo Manager BuildingPay) -->
+                                    <field name="accordo_retrocessioni_forzato"
+                                           string="Forza caricamento backoffice"
+                                           widget="boolean_toggle"
+                                           groups="BuildingPay_onboarding_v15.group_buildingpay_manager"/>
                                     <!-- Visibile e modificabile solo quando l'admin ha
                                          caricato il contratto (accordo_retrocessioni_ed = True) -->
                                     <field name="contratto_amministratore_pes"
@@ -223,6 +228,11 @@
                                     <field name="accordo_condomini_upload_date"
                                            readonly="1"
                                            invisible="not accordo_condomini_aggregati_ed"/>
+                                    <!-- Forza il caricamento dal backoffice (solo Manager BuildingPay) -->
+                                    <field name="accordo_condomini_forzato"
+                                           string="Forza caricamento backoffice"
+                                           widget="boolean_toggle"
+                                           groups="BuildingPay_onboarding_v15.group_buildingpay_manager"/>
                                     <!-- Modificabile solo quando l'admin ha caricato
                                          l'accordo (accordo_condomini_aggregati_ed = True) -->
                                     <field name="accordo_condomini_pes"
