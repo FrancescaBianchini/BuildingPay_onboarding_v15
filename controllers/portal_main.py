@@ -1125,7 +1125,7 @@ class BuildingPayPortal(CustomerPortal):
             # Campi semplici: scriviamo il valore se presente,
             # altrimenti lasciamo invariato (False svuota il campo).
             for field in ['fiscalcode', 'pec_mail', 'nome_promotore',
-                          'applicativo', 'sistema_pagamento']:
+                          'applicativo', 'sistema_pagamento', 'foro_competente']:
                 val = params.get(field, '').strip()
                 partner_vals[field] = val or False
 

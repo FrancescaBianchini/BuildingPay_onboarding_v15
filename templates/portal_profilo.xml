@@ -141,6 +141,19 @@
                                         </div>
                                     </div>
 
+                                    <div class="mb-3">
+                                        <label for="prof_foro_competente" class="form-label">
+                                            Foro Competente
+                                        </label>
+                                        <input type="text"
+                                               id="prof_foro_competente"
+                                               name="foro_competente"
+                                               class="form-control"
+                                               maxlength="256"
+                                               t-att-value="partner.foro_competente or ''"
+                                               placeholder="Es. Roma"/>
+                                    </div>
+
                                     <!-- ========================================
                                          DATI BANCARI
                                     ========================================= -->
