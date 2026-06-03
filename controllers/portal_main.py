@@ -457,6 +457,7 @@ class BuildingPayPortal(CustomerPortal):
                 '[NOME AMMINISTRATORE]': nome_amministratore,
                 '[Nome Amministratore]': nome_amministratore,
                 '[________]':            codice_fiscale,
+                '[foro]':                partner.foro_competente or '_' * 50,
                 '___________':           oggi,
             }
 

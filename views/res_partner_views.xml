@@ -140,6 +140,7 @@
                             <group string="Dati operativi">
                                 <field name="applicativo" string="Applicativo"/>
                                 <field name="sistema_pagamento" string="Sistemi di pagamento usati"/>
+                                <field name="foro_competente" string="Foro Competente"/>
                             </group>
 
                             <separator string="Condizioni Economiche"/>

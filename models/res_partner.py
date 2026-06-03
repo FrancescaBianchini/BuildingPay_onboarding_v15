@@ -310,6 +310,10 @@ class ResPartner(models.Model):
         string='Codice Destinatario SDI',
         size=7,
     )
+    foro_competente = fields.Char(
+        string='Foro Competente',
+        size=256,
+    )
     electronic_invoice_subjected = fields.Boolean(
         string='Soggetto a fatturazione elettronica',
         default=False,

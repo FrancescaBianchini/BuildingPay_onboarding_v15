@@ -391,7 +391,7 @@ class BuildingPaySignup(AuthSignupHome):
             #   - sistema_pagamento: modalità di pagamento rate (max 10 car.)
             # --------------------------------------------------------------
             extra_fields = {}
-            for field in ['pec_mail', 'applicativo', 'sistema_pagamento']:
+            for field in ['pec_mail', 'applicativo', 'sistema_pagamento', 'foro_competente']:
                 val = params.get(field, '').strip()
                 if val:
                     extra_fields[field] = val

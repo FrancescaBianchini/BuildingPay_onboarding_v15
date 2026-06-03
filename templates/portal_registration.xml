@@ -413,6 +413,17 @@
                                         </div>
                                     </div>
 
+                                    <div class="mb-3">
+                                        <label class="form-label" for="foro_competente">
+                                            Foro Competente
+                                        </label>
+                                        <input type="text" name="foro_competente"
+                                               id="foro_competente"
+                                               class="form-control"
+                                               t-att-value="form_data.get('foro_competente', '') if form_data else ''"
+                                               placeholder="Es. Roma" maxlength="256"/>
+                                    </div>
+
                                     <!-- ====================================
                                          DATI BANCARI
                                     ===================================== -->
