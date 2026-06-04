@@ -178,7 +178,7 @@ class ResPartner(models.Model):
     #   [DATA]                 → data odierna DD/MM/YYYY
     # -------------------------------------------------------
     accordo_retrocessioni_ed = fields.Boolean(
-        string='Accordo retrocessioni amministratore ED',
+        string='Accordo amministratore',
         default=False,
         tracking=True,
         help='Attivato quando l\'amministratore carica l\'Accordo Retrocessioni firmato.',
@@ -188,10 +188,10 @@ class ResPartner(models.Model):
         attachment=True,
     )
     accordo_retrocessioni_filename = fields.Char(
-        string='Nome file accordo retrocessioni',
+        string='Nome file accordo amministratore',
     )
     accordo_retrocessioni_upload_date = fields.Datetime(
-        string='Data caricamento accordo retrocessioni',
+        string='Data caricamento accordo amministratore',
         readonly=True,
     )
     accordo_retrocessioni_forzato = fields.Boolean(

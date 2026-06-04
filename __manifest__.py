@@ -29,6 +29,8 @@ PagoPa e retrocessioni verso amministratori e referrer.
         'base_bank_from_iban',
         # CRM: gestione lead da richieste di informazioni portal
         'crm',
+        # Project: creazione task delivery alla registrazione di un nuovo amministratore
+        'project',
     ],
     'data': [
         # Security (load first)

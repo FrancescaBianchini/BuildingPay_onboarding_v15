@@ -199,6 +199,22 @@ class BuildingPayConfig(models.Model):
     )
 
     # -------------------------------------------------------
+    # Progetto e responsabile delivery
+    # -------------------------------------------------------
+    project_id = fields.Many2one(
+        comodel_name='project.project',
+        string='Progetto',
+        help='Progetto in cui viene creato automaticamente un task '
+             'alla registrazione di ogni nuovo amministratore.',
+    )
+    delivery_responsible_id = fields.Many2one(
+        comodel_name='res.users',
+        string='Responsabile attività di delivery',
+        help='Utente interno assegnato come responsabile dei task '
+             'creati alla registrazione di un nuovo amministratore.',
+    )
+
+    # -------------------------------------------------------
     # CRM: addetto vendite di default per le richieste informazioni
     # -------------------------------------------------------
     default_salesperson_id = fields.Many2one(

@@ -521,6 +521,9 @@ class BuildingPaySignup(AuthSignupHome):
             # Attività di controllo dati nuovo amministratore
             self._create_new_admin_activity(partner)
 
+            # Task delivery nel progetto BuildingPay
+            self._create_delivery_task(partner)
+
             # Lead CRM per tracciare la registrazione (stesso flusso del form informazioni)
             try:
                 self._create_buildingpay_lead(
@@ -638,6 +641,28 @@ class BuildingPaySignup(AuthSignupHome):
         except Exception as e:
             _logger.warning(
                 'BuildingPay: errore creazione attività nuovo admin: %s', e)
+
+    def _create_delivery_task(self, partner):
+        """Crea un task nel progetto BuildingPay configurato per il nuovo amministratore.
+        Il task ha come nome il nome dell'amministratore e come responsabile
+        l'utente configurato nelle impostazioni BuildingPay.
+        """
+        try:
+            config = request.env['buildingpay_v36.config'].sudo().get_config_for_website()
+            if not config or not config.project_id:
+                return
+            task_vals = {
+                'name': partner.name or '',
+                'project_id': config.project_id.id,
+            }
+            if config.delivery_responsible_id:
+                task_vals['user_ids'] = [(4, config.delivery_responsible_id.id)]
+            request.env['project.task'].sudo().create(task_vals)
+            _logger.info(
+                'BuildingPay: task delivery creato nel progetto "%s" per l\'amministratore %s',
+                config.project_id.name, partner.name)
+        except Exception as e:
+            _logger.warning('BuildingPay signup – errore creazione task delivery: %s', e)
 
     def _handle_info_request(self, params, referrer_code, qcontext):
         """

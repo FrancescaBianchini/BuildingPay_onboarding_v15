@@ -23,6 +23,13 @@
                         </h1>
                     </div>
 
+                    <group string="Progetto e Delivery">
+                        <group>
+                            <field name="project_id" options="{'no_create': True}"/>
+                            <field name="delivery_responsible_id" options="{'no_create': True}"/>
+                        </group>
+                    </group>
+
                     <notebook>
                         <!-- Tab: Template Accordo Retrocessioni -->
                         <page string="Template Accordo Retrocessioni" name="template_retrocessioni">

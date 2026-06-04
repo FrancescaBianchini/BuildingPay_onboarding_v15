@@ -21,7 +21,7 @@
                 <t t-if="success == 'retrocessioni_uploaded'">
                     <div class="alert alert-success alert-dismissible fade show" role="alert">
                         <i class="fa fa-check-circle me-2"/>
-                        L'Accordo Retrocessioni firmato è stato caricato con successo!
+                        Il documento Accordo Amministratore firmato è stato caricato con successo!
                         <button type="button" class="btn-close" data-bs-dismiss="alert"/>
                     </div>
                 </t>
