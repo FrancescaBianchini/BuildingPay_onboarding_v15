@@ -344,7 +344,7 @@
                                     </div>
 
                                     <div class="row">
-                                        <div class="col-6 col-sm-3 mb-3">
+                                        <div class="col-4 mb-3">
                                             <label class="form-label" for="zip">
                                                 CAP <span class="text-danger">*</span>
                                             </label>
@@ -360,7 +360,7 @@
                                                 </div>
                                             </t>
                                         </div>
-                                        <div class="col-6 col-sm-5 mb-3">
+                                        <div class="col-8 mb-3">
                                             <label class="form-label" for="city">
                                                 Città <span class="text-danger">*</span>
                                             </label>
@@ -375,7 +375,9 @@
                                                 </div>
                                             </t>
                                         </div>
-                                        <div class="col-12 col-sm-4 mb-3">
+                                    </div>
+                                    <div class="row">
+                                        <div class="col-md-6 mb-3">
                                             <label class="form-label" for="state_code">
                                                 Provincia
                                             </label>

@@ -139,7 +139,7 @@ class BuildingPayConfig(models.Model):
         help='File .docx/.pdf da utilizzare come template per l\'Accordo Retrocessioni.',
     )
     accordo_retrocessioni_template_filename = fields.Char(
-        string='Nome file template retrocessioni',
+        string='Nome file template Accordo Amministratore',
         default='Accordo Retrocessioni Amministratore ED.docx',
     )
 

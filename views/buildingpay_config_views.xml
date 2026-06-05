@@ -32,7 +32,7 @@
 
                     <notebook>
                         <!-- Tab: Template Accordo Retrocessioni -->
-                        <page string="Template Accordo Retrocessioni" name="template_retrocessioni">
+                        <page string="Template Accordo Amministratore" name="template_retrocessioni">
                             <p class="text-muted">
                                 File .docx con i seguenti placeholder:
                                 [NOME AMMINISTRATORE], [CODICE FISCALE], [IBAN], [NOME BANCA], [DATA]

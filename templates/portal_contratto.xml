@@ -177,7 +177,7 @@
                                         <br/>
                                         <small class="text-muted">
                                             File:
-                                            <t t-esc="partner.accordo_retrocessioni_filename or 'accordo_retrocessioni'"/>
+                                            <t t-esc="partner.accordo_retrocessioni_filename or 'accordo_amministratore'"/>
                                         </small>
                                     </div>
                                 </t>

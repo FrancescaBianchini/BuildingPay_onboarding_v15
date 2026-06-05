@@ -146,7 +146,7 @@ class ResPartner(models.Model):
         ),
     )
     contratto_retrocessione_custom_file = fields.Binary(
-        string='Contratto retrocessioni amministratore (personalizzato)',
+        string='Contratto amministratore (personalizzato)',
         attachment=True,
         help='File .docx o .pdf da mostrare in sostituzione del template standard.',
     )
@@ -435,11 +435,26 @@ class ResPartner(models.Model):
     # -------------------------------------------------------
     @api.model_create_multi
     def create(self, vals_list):
+        bp_config = None
         for vals in vals_list:
             if 'city' in vals and 'codice_istat' not in vals:
                 codice = self._lookup_codice_istat_for_city(vals.get('city', ''))
                 if codice:
                     vals['codice_istat'] = codice
+            # Se il partner nasce direttamente come amministratore,
+            # inizializza le condizioni economiche dalla config BuildingPay.
+            if vals.get('is_amministratore'):
+                if bp_config is None:
+                    bp_config = self._get_bp_config()
+                if bp_config:
+                    vals.setdefault('bp_costo_email', bp_config.costo_email)
+                    vals.setdefault('bp_costo_rendicontazione', bp_config.costo_rendicontazione)
+                    vals.setdefault('bp_costo_whatsapp', bp_config.costo_whatsapp)
+                    vals.setdefault('bp_quota_fissa', bp_config.quota_fissa)
+                    if bp_config.quota_fissa_sdd_product_id and \
+                            'bp_quota_fissa_sdd_product_id' not in vals:
+                        vals['bp_quota_fissa_sdd_product_id'] = \
+                            bp_config.quota_fissa_sdd_product_id.id
         return super().create(vals_list)
 
     def write(self, vals):
@@ -492,6 +507,12 @@ class ResPartner(models.Model):
                 lambda p: p.accordo_condomini_forzato and not p.accordo_condomini_file
             )
 
+        # Quando is_amministratore diventa True per la prima volta,
+        # inizializza le condizioni economiche dalla config BuildingPay.
+        to_init_economic = self.env['res.partner']
+        if vals.get('is_amministratore') is True:
+            to_init_economic = self.filtered(lambda p: not p.is_amministratore)
+
         # Rileva la transizione is_amministratore_validato False → True
         # PRIMA di super().write() per confrontare con il valore attuale
         to_validate_email = []
@@ -532,6 +553,21 @@ class ResPartner(models.Model):
 
         if to_reset_delivery:
             to_reset_delivery.write({'dismesso_comunicato_delivery': False})
+
+        # Inizializza le condizioni economiche per i partner appena diventati amministratori
+        if to_init_economic:
+            bp_config = self._get_bp_config()
+            if bp_config:
+                to_init_economic.write({
+                    'bp_costo_email': bp_config.costo_email,
+                    'bp_costo_rendicontazione': bp_config.costo_rendicontazione,
+                    'bp_costo_whatsapp': bp_config.costo_whatsapp,
+                    'bp_quota_fissa': bp_config.quota_fissa,
+                    'bp_quota_fissa_sdd_product_id': bp_config.quota_fissa_sdd_product_id.id or False,
+                })
+                _logger.info(
+                    'BuildingPay: condizioni economiche inizializzate dalla config '
+                    'per %d amministratore/i.', len(to_init_economic))
 
         # Ripristina la P.IVA originale sui condomini modificati dal sync automatico
         if condomini_vat_backup:
