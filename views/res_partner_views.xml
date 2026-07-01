@@ -410,7 +410,7 @@
         <field name="name">res.partner.list.amministratori_buildingpay</field>
         <field name="model">res.partner</field>
         <field name="arch" type="xml">
-            <list string="Amministratori BuildingPay"
+            <tree string="Amministratori BuildingPay"
                   default_order="name asc"
                   editable="top"
                   decoration-warning="not accordo_retrocessioni_ed or not accordo_condomini_aggregati_ed">
@@ -450,7 +450,7 @@
                        string="Quota fissa"
                        optional="show"/>
 
-            </list>
+            </tree>
         </field>
     </record>
 
