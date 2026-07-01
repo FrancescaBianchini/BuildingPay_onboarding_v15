@@ -397,6 +397,74 @@
 
 
     <!-- ═══════════════════════════════════════════════════════════════
+         LISTA AMMINISTRATORI BUILDINGPAY
+         Vista dedicata: mostra solo i partner is_amministratore=True.
+         Colonne principali: nome, stato contratti (readonly).
+         Colonne opzionali (nascoste di default):
+           - is_amministratore_validato, referrer_id, condizioni economiche.
+         editable="top" abilita il multi-edit inline (seleziona più righe
+         e clicca un campo per modificarlo su tutti i record selezionati).
+         Visibile a: group_buildingpay_user e superiori.
+    ═══════════════════════════════════════════════════════════════ -->
+    <record id="view_partner_list_amministratori_bp" model="ir.ui.view">
+        <field name="name">res.partner.list.amministratori_buildingpay</field>
+        <field name="model">res.partner</field>
+        <field name="arch" type="xml">
+            <list string="Amministratori BuildingPay"
+                  default_order="name asc"
+                  editable="top"
+                  decoration-warning="not accordo_retrocessioni_ed or not accordo_condomini_aggregati_ed">
+
+                <!-- ── Colonne principali ── -->
+                <field name="name"
+                       string="Amministratore"
+                       readonly="1"/>
+                <field name="accordo_retrocessioni_ed"
+                       string="Contratto Amm."
+                       readonly="1"/>
+                <field name="accordo_condomini_aggregati_ed"
+                       string="Accordo Condomini"
+                       readonly="1"/>
+
+                <!-- ── Colonne opzionali – nascoste di default ── -->
+                <!--   optional="show" = colonna disponibile nel selettore
+                       ma NON visibile al primo accesso.                  -->
+                <field name="is_amministratore_validato"
+                       string="Validato"
+                       widget="boolean_toggle"
+                       optional="show"/>
+                <field name="referrer_id"
+                       string="Referrer"
+                       optional="show"
+                       readonly="1"/>
+                <field name="bp_costo_email"
+                       string="Costo email"
+                       optional="show"/>
+                <field name="bp_costo_rendicontazione"
+                       string="Costo rendicontazione"
+                       optional="show"/>
+                <field name="bp_costo_whatsapp"
+                       string="Costo WhatsApp"
+                       optional="show"/>
+                <field name="bp_quota_fissa"
+                       string="Quota fissa"
+                       optional="show"/>
+
+            </list>
+        </field>
+    </record>
+
+    <!-- Window action: Amministratori BuildingPay -->
+    <record id="action_partner_list_amministratori_bp" model="ir.actions.act_window">
+        <field name="name">Amministratori BuildingPay</field>
+        <field name="res_model">res.partner</field>
+        <field name="view_mode">list,form</field>
+        <field name="view_id" ref="view_partner_list_amministratori_bp"/>
+        <field name="domain">[('is_amministratore', '=', True)]</field>
+        <field name="context">{'default_is_amministratore': True}</field>
+    </record>
+
+    <!-- ═══════════════════════════════════════════════════════════════
          SERVER ACTION — Azione massiva: reimposta Condizioni Economiche
          Appare nel menu "Azione" della vista lista Contatti quando si
          selezionano uno o più record di tipo Amministratore.

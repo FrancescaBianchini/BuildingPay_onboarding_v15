@@ -10,6 +10,16 @@
               groups="BuildingPay_onboarding_v15.group_buildingpay_user"/>
 
     <!-- ================================================
+         MENU: AMMINISTRATORI (vista lista contratti)
+    ================================================= -->
+    <menuitem id="menu_buildingpay_amministratori"
+              name="Amministratori BuildingPay"
+              parent="menu_buildingpay_root"
+              action="action_partner_list_amministratori_bp"
+              sequence="10"
+              groups="BuildingPay_onboarding_v15.group_buildingpay_user"/>
+
+    <!-- ================================================
          MENU: CONFIGURAZIONE
     ================================================= -->
     <menuitem id="menu_buildingpay_config_root"
