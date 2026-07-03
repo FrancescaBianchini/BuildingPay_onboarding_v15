@@ -398,12 +398,10 @@
 
     <!-- ═══════════════════════════════════════════════════════════════
          LISTA AMMINISTRATORI BUILDINGPAY
-         Vista dedicata: mostra solo i partner is_amministratore=True.
-         Colonne principali: nome, stato contratti (readonly).
-         Colonne opzionali (nascoste di default):
+         Clic su riga → apre la scheda contatto (form view).
+         Colonne file: visibili di default, scaricabili con widget binary.
+         Colonne opzionali (nascoste di default, attivabili dal selettore ⚙):
            - is_amministratore_validato, referrer_id, condizioni economiche.
-         editable="top" abilita il multi-edit inline (seleziona più righe
-         e clicca un campo per modificarlo su tutti i record selezionati).
          Visibile a: group_buildingpay_user e superiori.
     ═══════════════════════════════════════════════════════════════ -->
     <record id="view_partner_list_amministratori_bp" model="ir.ui.view">
@@ -412,13 +410,11 @@
         <field name="arch" type="xml">
             <tree string="Amministratori BuildingPay"
                   default_order="name asc"
-                  editable="top"
                   decoration-warning="not accordo_retrocessioni_ed or not accordo_condomini_aggregati_ed">
 
                 <!-- ── Colonne principali ── -->
                 <field name="name"
-                       string="Amministratore"
-                       readonly="1"/>
+                       string="Amministratore"/>
                 <field name="accordo_retrocessioni_ed"
                        string="Contratto Amm."
                        readonly="1"/>
@@ -426,17 +422,55 @@
                        string="Accordo Condomini"
                        readonly="1"/>
 
+                <!-- ── File contratti – visibili di default, scaricabili ── -->
+                <!--   optional="hide" = visibili di default, nascondibili dall'icona ⚙  -->
+                <!--   I campi *_filename sono resi invisibili (nessuna colonna) ma
+                       necessari al widget binary per impostare il nome del file scaricato. -->
+                <field name="accordo_retrocessioni_file"
+                       string="Accordo Amm. (admin)"
+                       widget="binary"
+                       filename="accordo_retrocessioni_filename"
+                       readonly="1"
+                       optional="hide"/>
+                <field name="accordo_retrocessioni_filename"
+                       column_invisible="True"/>
+
+                <field name="accordo_condomini_file"
+                       string="Accordo Condomini (admin)"
+                       widget="binary"
+                       filename="accordo_condomini_filename"
+                       readonly="1"
+                       optional="hide"/>
+                <field name="accordo_condomini_filename"
+                       column_invisible="True"/>
+
+                <field name="contratto_amministratore_pes"
+                       string="Accordo Amm. (firmato PeS)"
+                       widget="binary"
+                       filename="contratto_amministratore_pes_filename"
+                       readonly="1"
+                       optional="hide"/>
+                <field name="contratto_amministratore_pes_filename"
+                       column_invisible="True"/>
+
+                <field name="accordo_condomini_pes"
+                       string="Accordo Condomini (firmato PeS)"
+                       widget="binary"
+                       filename="accordo_condomini_pes_filename"
+                       readonly="1"
+                       optional="hide"/>
+                <field name="accordo_condomini_pes_filename"
+                       column_invisible="True"/>
+
                 <!-- ── Colonne opzionali – nascoste di default ── -->
-                <!--   optional="show" = colonna disponibile nel selettore
-                       ma NON visibile al primo accesso.                  -->
+                <!--   optional="show" = nascoste al primo accesso, attivabili dall'icona ⚙  -->
                 <field name="is_amministratore_validato"
                        string="Validato"
                        widget="boolean_toggle"
                        optional="show"/>
                 <field name="referrer_id"
                        string="Referrer"
-                       optional="show"
-                       readonly="1"/>
+                       optional="show"/>
                 <field name="bp_costo_email"
                        string="Costo email"
                        optional="show"/>
