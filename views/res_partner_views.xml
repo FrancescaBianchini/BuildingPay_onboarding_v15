@@ -458,7 +458,7 @@
     <record id="action_partner_list_amministratori_bp" model="ir.actions.act_window">
         <field name="name">Amministratori BuildingPay</field>
         <field name="res_model">res.partner</field>
-        <field name="view_mode">list,form</field>
+        <field name="view_mode">tree,form</field>
         <field name="view_id" ref="view_partner_list_amministratori_bp"/>
         <field name="domain">[('is_amministratore', '=', True)]</field>
         <field name="context">{'default_is_amministratore': True}</field>
