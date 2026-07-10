@@ -46,18 +46,78 @@
                     </div>
                 </t>
 
-                <!-- Pulsante aggiungi -->
-                <div class="d-flex justify-content-between align-items-center mb-4">
+                <!-- Header: titolo + pulsanti principali -->
+                <div class="d-flex justify-content-between align-items-center mb-2">
                     <h4 class="mb-0">
                         Condomini gestiti
                         <span class="badge bg-secondary ms-2">
                             <t t-esc="len(condomini)"/>
                         </span>
                     </h4>
-                    <a href="/my/condomini/new" class="btn btn-primary">
-                        <i class="fa fa-plus me-2"/>
-                        Aggiungi Condominio
+                    <div class="d-flex gap-2">
+                        <button type="button"
+                                class="btn btn-outline-primary"
+                                data-bs-toggle="collapse"
+                                data-bs-target="#bp-import-condomini-section"
+                                aria-expanded="false"
+                                aria-controls="bp-import-condomini-section">
+                            <i class="fa fa-upload me-2"/>
+                            Importa Condomini
+                        </button>
+                        <a href="/my/condomini/new" class="btn btn-primary">
+                            <i class="fa fa-plus me-2"/>
+                            Aggiungi Condominio
+                        </a>
+                    </div>
+                </div>
+
+                <!-- Riga template download: testo + link Excel -->
+                <div class="d-flex align-items-center gap-2 mb-3 text-muted small">
+                    <i class="fa fa-file-excel-o text-success"/>
+                    <span>Scarica template per importare i condomini</span>
+                    <a href="/my/condomini/import/template"
+                       class="btn btn-sm btn-outline-success py-0 px-2">
+                        <i class="fa fa-download me-1"/>
+                        Template Excel
                     </a>
+                </div>
+
+                <!-- Sezione import collassabile -->
+                <div class="collapse mb-4" id="bp-import-condomini-section">
+                    <div class="card border-primary">
+                        <div class="card-header bg-primary text-white py-2">
+                            <i class="fa fa-upload me-2"/>
+                            <strong>Importa condomini da file Excel</strong>
+                        </div>
+                        <div class="card-body">
+                            <p class="text-muted small mb-3">
+                                Carica il file Excel compilato seguendo il template.
+                                Le righe con errori vengono scartate automaticamente.
+                                Al termine viene mostrato un riepilogo dettagliato
+                                con i motivi di scarto per ogni riga.
+                            </p>
+                            <form action="/my/condomini/import"
+                                  method="post"
+                                  enctype="multipart/form-data">
+                                <input type="hidden" name="csrf_token"
+                                       t-att-value="request.csrf_token()"/>
+                                <div class="mb-3">
+                                    <label class="form-label fw-semibold">
+                                        Seleziona file Excel (.xlsx)
+                                    </label>
+                                    <input type="file"
+                                           name="import_file"
+                                           class="form-control"
+                                           accept=".xlsx,.xls"
+                                           required="required"/>
+                                </div>
+                                <button type="submit" class="btn btn-primary">
+                                    <i class="fa fa-upload me-2"/>
+                                    Carica e importa
+                                </button>
+                            </form>
+                        </div>
+                    </div>
                 </div>
 
                 <!-- Lista condomini -->
@@ -147,6 +207,155 @@
                         </a>
                     </div>
                 </t>
+
+            </div>
+        </t>
+    </template>
+
+    <!-- ================================================
+         PAGINA RISULTATI IMPORTAZIONE CONDOMINI
+    ================================================= -->
+    <template id="portal_condomini_import_result"
+              name="BuildingPay - Risultati Importazione Condomini">
+        <t t-call="portal.portal_layout">
+            <t t-set="breadcrumbs_searchbar" t-value="False"/>
+            <t t-call="portal.portal_searchbar">
+                <t t-set="title">Importazione Condomini — Risultati</t>
+            </t>
+
+            <div class="container mt-4">
+
+                <!-- ── Banner riepilogo ── -->
+                <t t-if="created_count == 0 and skipped_count == 0">
+                    <div class="alert alert-warning">
+                        <i class="fa fa-exclamation-triangle me-2"/>
+                        Nessuna riga elaborata. Il file potrebbe essere vuoto o nel formato sbagliato.
+                    </div>
+                </t>
+                <t t-elif="created_count > 0 and skipped_count == 0">
+                    <div class="alert alert-success">
+                        <i class="fa fa-check-circle me-2"/>
+                        <strong>Importazione completata con successo!</strong>
+                        Tutti i <strong><t t-esc="created_count"/></strong> condomini sono stati creati.
+                    </div>
+                </t>
+                <t t-elif="created_count > 0 and skipped_count > 0">
+                    <div class="alert alert-warning">
+                        <i class="fa fa-exclamation-circle me-2"/>
+                        <strong>Importazione completata parzialmente.</strong>
+                        Creati: <strong><t t-esc="created_count"/></strong> —
+                        Scartati: <strong><t t-esc="skipped_count"/></strong>
+                        (vedere i dettagli nella tabella sottostante).
+                    </div>
+                </t>
+                <t t-else="">
+                    <div class="alert alert-danger">
+                        <i class="fa fa-times-circle me-2"/>
+                        <strong>Nessun condominio importato.</strong>
+                        Tutti i <strong><t t-esc="skipped_count"/></strong> record sono stati scartati.
+                        Correggere gli errori nel file Excel e riprovare.
+                    </div>
+                </t>
+
+                <!-- ── Contatori grafici ── -->
+                <div class="row g-3 mb-4">
+                    <div class="col-md-4">
+                        <div class="card text-center border-0 bg-success bg-opacity-10">
+                            <div class="card-body py-3">
+                                <div class="display-6 fw-bold text-success">
+                                    <t t-esc="created_count"/>
+                                </div>
+                                <div class="text-muted small">Condomini creati</div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="card text-center border-0 bg-danger bg-opacity-10">
+                            <div class="card-body py-3">
+                                <div class="display-6 fw-bold text-danger">
+                                    <t t-esc="skipped_count"/>
+                                </div>
+                                <div class="text-muted small">Record scartati</div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="card text-center border-0 bg-secondary bg-opacity-10">
+                            <div class="card-body py-3">
+                                <div class="display-6 fw-bold text-secondary">
+                                    <t t-esc="len(logs)"/>
+                                </div>
+                                <div class="text-muted small">Righe elaborate</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- ── Log dettagliato ── -->
+                <div class="card">
+                    <div class="card-header d-flex justify-content-between align-items-center">
+                        <span>
+                            <i class="fa fa-list me-2"/>
+                            <strong>Log dettagliato per riga</strong>
+                        </span>
+                    </div>
+                    <div class="table-responsive">
+                        <table class="table table-sm table-hover mb-0">
+                            <thead class="table-light">
+                                <tr>
+                                    <th style="width:80px">Riga</th>
+                                    <th style="width:30%">Denominazione</th>
+                                    <th style="width:90px">Esito</th>
+                                    <th>Dettaglio</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <t t-foreach="logs" t-as="log">
+                                    <tr t-att-class="'table-success' if log['status'] == 'ok' else ('table-danger' if log['status'] == 'error' else 'table-warning')">
+                                        <td class="fw-semibold text-muted">
+                                            <t t-esc="log['row']"/>
+                                        </td>
+                                        <td>
+                                            <t t-esc="log['name']"/>
+                                        </td>
+                                        <td>
+                                            <t t-if="log['status'] == 'ok'">
+                                                <span class="badge bg-success">
+                                                    <i class="fa fa-check me-1"/>Creato
+                                                </span>
+                                            </t>
+                                            <t t-elif="log['status'] == 'error'">
+                                                <span class="badge bg-danger">
+                                                    <i class="fa fa-times me-1"/>Errore
+                                                </span>
+                                            </t>
+                                            <t t-else="">
+                                                <span class="badge bg-warning text-dark">
+                                                    <i class="fa fa-ban me-1"/>Scartato
+                                                </span>
+                                            </t>
+                                        </td>
+                                        <td class="small">
+                                            <t t-esc="log['message']"/>
+                                        </td>
+                                    </tr>
+                                </t>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <!-- ── Azioni finali ── -->
+                <div class="d-flex gap-2 mt-4">
+                    <a href="/my/condomini" class="btn btn-primary">
+                        <i class="fa fa-building-o me-2"/>
+                        Vai ai Condomini
+                    </a>
+                    <a href="/my/condomini" class="btn btn-outline-secondary">
+                        <i class="fa fa-upload me-2"/>
+                        Importa un altro file
+                    </a>
+                </div>
 
             </div>
         </t>

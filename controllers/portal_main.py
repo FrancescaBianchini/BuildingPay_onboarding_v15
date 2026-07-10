@@ -1520,4 +1520,313 @@ class BuildingPayPortal(CustomerPortal):
         vals['vat'] = _normalize_vat_prefix(request.env, vat, country_id) or False
         return vals
 
+    # ──────────────────────────────────────────────────────────────────────────
+    # IMPORTAZIONE CONDOMINI DA EXCEL
+    # ──────────────────────────────────────────────────────────────────────────
+
+    @http.route('/my/condomini/import/template', type='http', auth='user', website=True)
+    def portal_condomini_import_template(self, **kw):
+        """Genera e scarica il template Excel per l'importazione dei condomini."""
+        partner = request.env.user.partner_id
+        if not partner.is_amministratore:
+            return request.redirect('/my')
+
+        import openpyxl
+        from openpyxl.styles import Font, PatternFill, Alignment, Border, Side
+        from openpyxl.utils import get_column_letter
+
+        wb = openpyxl.Workbook()
+        ws = wb.active
+        ws.title = "Condomini"
+
+        headers = [
+            'Nome/Ragione Sociale *',
+            'Indirizzo *',
+            'Provincia',
+            'CAP *',
+            'Città *',
+            'Codice Fiscale *',
+            'Partita IVA',
+            'PEC',
+            'IBAN Principale *',
+            'IBAN Secondario',
+            'Note',
+        ]
+
+        header_font  = Font(bold=True, color='FFFFFF', name='Calibri', size=10)
+        header_fill  = PatternFill(start_color='1F4E79', end_color='1F4E79', fill_type='solid')
+        header_align = Alignment(horizontal='center', vertical='center', wrap_text=True)
+        thin_side    = Side(style='thin', color='BDD7EE')
+        border       = Border(left=thin_side, right=thin_side, top=thin_side, bottom=thin_side)
+        demo_fill    = PatternFill(start_color='EBF3FB', end_color='EBF3FB', fill_type='solid')
+        demo_align   = Alignment(horizontal='left', vertical='center')
+
+        for col_idx, header in enumerate(headers, 1):
+            cell = ws.cell(row=1, column=col_idx, value=header)
+            cell.font   = header_font
+            cell.fill   = header_fill
+            cell.alignment = header_align
+            cell.border = border
+
+        ws.row_dimensions[1].height = 30
+
+        demo_row = [
+            'Condominio Il Giardino',
+            'Via Roma 15',
+            'MI',
+            '20100',
+            'Milano',
+            '97012345678',
+            '01234567890',
+            'condominioilgiardino@pec.it',
+            'IT60X0542811101000000123456',
+            '',
+            'Riga demo — eliminare prima di importare',
+        ]
+        for col_idx, value in enumerate(demo_row, 1):
+            cell = ws.cell(row=2, column=col_idx, value=value)
+            cell.fill   = demo_fill
+            cell.border = border
+            cell.alignment = demo_align
+
+        col_widths = [30, 28, 12, 8, 20, 18, 18, 32, 30, 30, 40]
+        for col_idx, width in enumerate(col_widths, 1):
+            ws.column_dimensions[get_column_letter(col_idx)].width = width
+
+        # Nota in fondo
+        ws.cell(row=4, column=1,
+                value='Campi con * sono obbligatori. La P.IVA viene normalizzata (prefisso IT aggiunto automaticamente se provincia italiana).')
+        ws.cell(row=4, column=1).font = Font(italic=True, color='595959', size=9, name='Calibri')
+
+        output = BytesIO()
+        wb.save(output)
+        output.seek(0)
+
+        return request.make_response(
+            output.read(),
+            headers=[
+                ('Content-Type',
+                 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'),
+                ('Content-Disposition',
+                 'attachment; filename="template_importazione_condomini.xlsx"'),
+            ]
+        )
+
+    @http.route('/my/condomini/import', type='http', auth='user', website=True,
+                methods=['POST'])
+    def portal_condomini_import(self, **kw):
+        """Elabora il file Excel caricato e crea i condomini."""
+        partner = request.env.user.partner_id
+
+        if not partner.is_amministratore:
+            return request.redirect('/my')
+        if not partner.is_amministratore_validato:
+            return request.redirect('/my/condomini?error=not_validated')
+
+        file_upload = request.params.get('import_file')
+        if not file_upload or not hasattr(file_upload, 'read'):
+            return request.redirect('/my/condomini?error=no_file')
+
+        filename = getattr(file_upload, 'filename', '') or ''
+        if not filename.lower().endswith(('.xlsx', '.xls')):
+            return request.redirect('/my/condomini?error=wrong_format')
+
+        logs, created_count, skipped_count = self._import_condomini_from_xlsx(
+            file_upload, partner
+        )
+
+        return request.render(
+            'BuildingPay_onboarding_v15.portal_condomini_import_result',
+            {
+                'logs': logs,
+                'created_count': created_count,
+                'skipped_count': skipped_count,
+                'page_name': 'condomini',
+            }
+        )
+
+    def _import_condomini_from_xlsx(self, file_obj, admin_partner):
+        """
+        Legge il file Excel, valida ogni riga e crea i condomini.
+        Usa savepoint per riga: un errore su una riga non blocca le altre.
+        Ritorna: (logs, created_count, skipped_count)
+        """
+        import openpyxl
+
+        logs = []
+        created_count = 0
+        skipped_count = 0
+
+        try:
+            wb = openpyxl.load_workbook(
+                filename=BytesIO(file_obj.read()), data_only=True
+            )
+            ws = wb.active
+        except Exception as exc:
+            return (
+                [{'row': '—', 'name': '—', 'status': 'error',
+                  'message': f'Impossibile leggere il file: {exc}'}],
+                0, 0
+            )
+
+        italy = request.env['res.country'].sudo().search(
+            [('code', '=', 'IT')], limit=1
+        )
+        italy_id = italy.id if italy else None
+
+        def _cell(row_tuple, idx):
+            val = row_tuple[idx] if idx < len(row_tuple) else None
+            return str(val).strip() if val is not None else ''
+
+        for row_idx, row in enumerate(ws.iter_rows(min_row=2, values_only=True), start=2):
+            # Salta righe completamente vuote
+            if not any(v for v in row if v is not None and str(v).strip()):
+                continue
+
+            name         = _cell(row, 0)
+            street       = _cell(row, 1)
+            province_raw = _cell(row, 2).upper().strip()
+            zip_code     = _cell(row, 3)
+            city         = _cell(row, 4)
+            fiscalcode   = _cell(row, 5).upper().strip()
+            vat_raw      = _cell(row, 6)
+            pec_mail     = _cell(row, 7).lower().strip()
+            iban         = _cell(row, 8).replace(' ', '').upper()
+            iban2        = _cell(row, 9).replace(' ', '').upper()
+            note         = _cell(row, 10)
+
+            row_label    = f'Riga {row_idx}'
+            display_name = name or '(senza nome)'
+
+            # ── Validazioni ──────────────────────────────────────────────
+            errors = []
+            if not name:
+                errors.append('nome/ragione sociale obbligatorio mancante')
+            if not street:
+                errors.append('indirizzo obbligatorio mancante')
+            if not zip_code:
+                errors.append('CAP obbligatorio mancante')
+            if not city:
+                errors.append('città obbligatoria mancante')
+            if not fiscalcode:
+                errors.append('codice fiscale obbligatorio mancante')
+            else:
+                existing_cf = request.env['res.partner'].sudo().search(
+                    [('fiscalcode', '=ilike', fiscalcode)], limit=1
+                )
+                if existing_cf:
+                    errors.append(
+                        f'codice fiscale "{fiscalcode}" già presente nel sistema'
+                    )
+            if not iban:
+                errors.append('IBAN principale obbligatorio mancante')
+            elif validate_iban:
+                try:
+                    validate_iban(iban)
+                except Exception:
+                    errors.append(f'IBAN principale "{iban}" non valido')
+            if iban2 and validate_iban:
+                try:
+                    validate_iban(iban2)
+                except Exception:
+                    errors.append(f'IBAN secondario "{iban2}" non valido')
+
+            if errors:
+                logs.append({
+                    'row': row_label,
+                    'name': display_name,
+                    'status': 'skip',
+                    'message': '; '.join(errors).capitalize() + '.',
+                })
+                skipped_count += 1
+                continue
+
+            # ── Lookup provincia ─────────────────────────────────────────
+            state_id = False
+            if province_raw and italy_id:
+                state = request.env['res.country.state'].sudo().search([
+                    ('country_id', '=', italy_id),
+                    '|',
+                    ('code', '=ilike', province_raw),
+                    ('name', '=ilike', province_raw),
+                ], limit=1)
+                if state:
+                    state_id = state.id
+
+            # ── Normalizzazione P.IVA ─────────────────────────────────────
+            # Aggiunge "IT" se la provincia è italiana e il prefisso manca
+            vat_normalized = ''
+            if vat_raw:
+                if state_id or not province_raw:
+                    vat_normalized = _normalize_vat_prefix(
+                        request.env, vat_raw, italy_id
+                    )
+                else:
+                    vat_normalized = vat_raw.strip().upper()
+
+            # ── Creazione con savepoint (errori isolati per riga) ─────────
+            try:
+                with request.env.cr.savepoint():
+                    vals = {
+                        'name':       name,
+                        'type':       'condominio',
+                        'is_company': False,
+                        'parent_id':  admin_partner.id,
+                        'street':     street,
+                        'zip':        zip_code,
+                        'city':       city,
+                        'country_id': italy_id or False,
+                        'fiscalcode': fiscalcode,
+                        'pec_mail':   pec_mail or False,
+                        'vat':        vat_normalized or False,
+                        'comment':    note or False,
+                    }
+                    if state_id:
+                        vals['state_id'] = state_id
+
+                    condominio = request.env['res.partner'].sudo().create(vals)
+
+                    request.env['res.partner.bank'].sudo().create({
+                        'partner_id': condominio.id,
+                        'acc_number': iban,
+                    })
+                    if iban2:
+                        request.env['res.partner.bank'].sudo().create({
+                            'partner_id': condominio.id,
+                            'acc_number': iban2,
+                        })
+
+                # Dettagli per il log
+                details = []
+                if state_id and province_raw:
+                    details.append(f'prov. {province_raw}')
+                if vat_normalized:
+                    details.append(f'P.IVA: {vat_normalized}')
+                if iban2:
+                    details.append('con IBAN secondario')
+
+                logs.append({
+                    'row':     row_label,
+                    'name':    display_name,
+                    'status':  'ok',
+                    'message': 'Creato con successo'
+                               + (f' ({", ".join(details)})' if details else '') + '.',
+                })
+                created_count += 1
+
+            except Exception as exc:
+                _logger.error(
+                    'BuildingPay import condomini: errore riga %s (%s): %s',
+                    row_idx, display_name, exc
+                )
+                logs.append({
+                    'row':     row_label,
+                    'name':    display_name,
+                    'status':  'error',
+                    'message': f'Errore tecnico durante la creazione: {exc}',
+                })
+                skipped_count += 1
+
+        return logs, created_count, skipped_count
+
 
