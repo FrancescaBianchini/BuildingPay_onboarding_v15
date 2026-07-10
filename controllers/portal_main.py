@@ -1623,13 +1623,12 @@ class BuildingPayPortal(CustomerPortal):
         if not partner.is_amministratore_validato:
             return request.redirect('/my/condomini?error=not_validated')
 
-        file_upload = request.params.get('import_file')
+        # I file multipart sono nei kwargs, non in request.params
+        file_upload = kw.get('import_file')
         if not file_upload or not hasattr(file_upload, 'read'):
+            _logger.warning('BuildingPay import condomini: file non ricevuto (kw keys: %s)',
+                            list(kw.keys()))
             return request.redirect('/my/condomini?error=no_file')
-
-        filename = getattr(file_upload, 'filename', '') or ''
-        if not filename.lower().endswith(('.xlsx', '.xls')):
-            return request.redirect('/my/condomini?error=wrong_format')
 
         logs, created_count, skipped_count = self._import_condomini_from_xlsx(
             file_upload, partner
