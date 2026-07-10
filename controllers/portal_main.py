@@ -1620,8 +1620,6 @@ class BuildingPayPortal(CustomerPortal):
 
         if not partner.is_amministratore:
             return request.redirect('/my')
-        if not partner.is_amministratore_validato:
-            return request.redirect('/my/condomini?error=not_validated')
 
         # I file multipart/form-data arrivano in kw; fallback su httprequest.files
         file_upload = kw.get('import_file')

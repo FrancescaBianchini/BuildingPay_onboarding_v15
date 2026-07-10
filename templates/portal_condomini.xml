@@ -41,11 +41,7 @@
                 <t t-if="request.params.get('error')">
                     <div class="alert alert-danger alert-dismissible fade show">
                         <i class="fa fa-exclamation-circle me-2"/>
-                        <t t-if="request.params.get('error') == 'not_validated'">
-                            Il tuo account non è ancora stato validato dal team BuildingPay.
-                            Contatta l'assistenza per abilitare l'importazione condomini.
-                        </t>
-                        <t t-elif="request.params.get('error') == 'no_file'">
+                        <t t-if="request.params.get('error') == 'no_file'">
                             Nessun file ricevuto dal server. Assicurati di aver selezionato
                             un file .xlsx prima di premere "Carica e importa".
                         </t>
