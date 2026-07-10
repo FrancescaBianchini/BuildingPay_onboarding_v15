@@ -1623,16 +1623,35 @@ class BuildingPayPortal(CustomerPortal):
         if not partner.is_amministratore_validato:
             return request.redirect('/my/condomini?error=not_validated')
 
-        # I file multipart sono nei kwargs, non in request.params
+        # I file multipart/form-data arrivano in kw; fallback su httprequest.files
         file_upload = kw.get('import_file')
         if not file_upload or not hasattr(file_upload, 'read'):
-            _logger.warning('BuildingPay import condomini: file non ricevuto (kw keys: %s)',
-                            list(kw.keys()))
+            file_upload = request.httprequest.files.get('import_file')
+
+        if not file_upload or not hasattr(file_upload, 'read'):
+            _logger.warning(
+                'BuildingPay import condomini: file non ricevuto '
+                '(kw keys: %s, files keys: %s)',
+                list(kw.keys()),
+                list(request.httprequest.files.keys()),
+            )
             return request.redirect('/my/condomini?error=no_file')
 
-        logs, created_count, skipped_count = self._import_condomini_from_xlsx(
-            file_upload, partner
-        )
+        try:
+            logs, created_count, skipped_count = self._import_condomini_from_xlsx(
+                file_upload, partner
+            )
+        except Exception as exc:
+            _logger.error(
+                'BuildingPay import condomini: errore imprevisto: %s', exc,
+                exc_info=True,
+            )
+            logs = [{
+                'row': '—', 'name': '—', 'status': 'error',
+                'message': f'Errore imprevisto durante l\'elaborazione: {exc}',
+            }]
+            created_count = 0
+            skipped_count = 0
 
         return request.render(
             'BuildingPay_onboarding_v15.portal_condomini_import_result',

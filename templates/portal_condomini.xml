@@ -41,7 +41,19 @@
                 <t t-if="request.params.get('error')">
                     <div class="alert alert-danger alert-dismissible fade show">
                         <i class="fa fa-exclamation-circle me-2"/>
-                        Si è verificato un errore. Riprova o contatta l'assistenza.
+                        <t t-if="request.params.get('error') == 'not_validated'">
+                            Il tuo account non è ancora stato validato dal team BuildingPay.
+                            Contatta l'assistenza per abilitare l'importazione condomini.
+                        </t>
+                        <t t-elif="request.params.get('error') == 'no_file'">
+                            Nessun file ricevuto dal server. Assicurati di aver selezionato
+                            un file .xlsx prima di premere "Carica e importa".
+                        </t>
+                        <t t-else="">
+                            Si è verificato un errore
+                            (<t t-esc="request.params.get('error')"/>).
+                            Riprova o contatta l'assistenza.
+                        </t>
                         <button type="button" class="btn-close" data-bs-dismiss="alert"/>
                     </div>
                 </t>
