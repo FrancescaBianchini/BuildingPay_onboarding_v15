@@ -39,7 +39,7 @@
         <field name="arch" type="xml">
 
             <!-- Campo di ricerca per nome del referrer -->
-            <xpath expr="//search/field[1]" position="before">
+            <xpath expr="//search/field[@name='city']" position="after">
                 <field name="referrer_id"
                        string="Referrer BuildingPay"
                        filter_domain="[('referrer_id.name', 'ilike', self)]"/>
