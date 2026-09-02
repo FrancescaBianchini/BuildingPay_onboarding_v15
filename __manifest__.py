@@ -9,7 +9,7 @@ BuildingPay - Modulo per la gestione degli amministratori di condomini,
 portale web per registrazione e gestione contratti, importazione fatture
 PagoPa e retrocessioni verso amministratori e referrer.
     """,
-    'author': 'Progetto e Soluzioni',
+    'author': 'Francesca Bianchini - Progetto e Soluzioni',
     'website': 'https://www.progettiesoluzioni.it',
     'license': 'OPL-1',
     'depends': [
