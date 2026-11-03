@@ -437,6 +437,9 @@ class ResPartner(models.Model):
     def create(self, vals_list):
         bp_config = None
         for vals in vals_list:
+            # Il condominio è un'entità commerciale a sé (vedi _check_condominio_is_company)
+            if vals.get('type') == 'condominio':
+                vals['is_company'] = True
             if 'city' in vals and 'codice_istat' not in vals:
                 codice = self._lookup_codice_istat_for_city(vals.get('city', ''))
                 if codice:
@@ -458,6 +461,12 @@ class ResPartner(models.Model):
         return super().create(vals_list)
 
     def write(self, vals):
+        if vals.get('type') == 'condominio':
+            vals = dict(vals)
+            vals['is_company'] = True
+        elif 'is_company' in vals and not vals['is_company'] and 'type' not in vals:
+            self._check_condominio_is_company()
+
         # Se la città cambia e codice_istat non è già esplicitamente fornito,
         # auto-popola il codice ISTAT dalla tabella importata.
         if 'city' in vals and 'codice_istat' not in vals:
@@ -598,6 +607,18 @@ class ResPartner(models.Model):
                 )
 
         return result
+
+    def _check_condominio_is_company(self):
+        """Il condominio è il soggetto fatturato: deve essere un'entità commerciale
+        (is_company) anche se figlio dell'amministratore. Altrimenti Odoo usa il
+        padre come commercial_partner_id e vi intesta crediti, solleciti e mandati
+        SDD, e sincronizza sul condominio P.IVA, conti e posizione fiscale del padre.
+        """
+        condomini = self.filtered(lambda p: p.type == 'condominio')
+        if condomini:
+            raise UserError(_(
+                'Il condominio "%s" deve restare un\'azienda: è il soggetto a cui '
+                'vengono intestate fatture e crediti.', condomini[0].name))
 
     def _send_pes_signed_email(self, template_name, file_data, filename):
         """Invia la mail con il documento firmato da Pes in allegato.

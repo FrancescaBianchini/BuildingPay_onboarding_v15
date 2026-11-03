@@ -1786,7 +1786,7 @@ class BuildingPayPortal(CustomerPortal):
                     vals = {
                         'name':       name,
                         'type':       'condominio',
-                        'is_company': False,
+                        'is_company': True,
                         'parent_id':  admin_partner.id,
                         'street':     street,
                         'zip':        zip_code,
